@@ -100,7 +100,7 @@ function App() {
       const height = body.clientHeight;
       html.style.height = height + 1 + "px";
       body.style.height = height + 1 + "px";
-      window.scrollTo(0, 10);
+      window.scrollTo(0, 100);
     }, 1000);
   }, []);
   useEffect(() => {
@@ -309,6 +309,8 @@ function App() {
           setRouteSetting(routeSetting);
           //place layer in map
           configureRouteLayer(routeList);
+          //open sidebar
+          setSidebarPosition({ active: true });
         }
       }
     );
