@@ -99,7 +99,7 @@ function App() {
       setStopFilter(false);
     }
     const onClick = (e) => {
-      //bbox for increasing click tolerance
+      //bbox for increasing click tolerance by 5px
       const bbox = [
         [e.point.x - 5, e.point.y - 5],
         [e.point.x + 5, e.point.y + 5],
@@ -745,7 +745,8 @@ function App() {
     map.current.on("move", mapMoveEvent); //apply event
     const target = sidebar.current.getContainer();
     //set final height depending on current state
-    const height = sidebarPosition.active ? 300 : 0;
+    const maxHeight = document.body.clientHeight > 700 ? 300 : 200;
+    const height = sidebarPosition.active ? maxHeight : 0;
     const difference = height - target.clientHeight;
     function easing(t) {
       return t * (2 - t);
@@ -903,7 +904,8 @@ function App() {
         map.current.panBy([0, move / 2], {
           duration: 1,
         });
-        const newHeight = Math.min(300, target.clientHeight + move);
+        const maxHeight = document.body.clientHeight > 700 ? 300 : 200;
+        const newHeight = Math.min(maxHeight, target.clientHeight + move);
         //set new height
         target.style.height = newHeight + "px";
         //set attribution margin;
