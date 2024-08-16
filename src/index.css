@@ -4,11 +4,13 @@
   box-sizing: border-box;
   font-family: sans-serif;
 }
-html,
-body {
-  min-height: calc(100% + env(safe-area-inset-top));
+html {
   padding: env(safe-area-inset-top) env(safe-area-inset-right)
     env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+html,
+body {
+  min-height: calc(100dvh + env(safe-area-inset-top));
   width: 100vw;
   overflow: hidden;
   overscroll-behavior: none;
