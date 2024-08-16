@@ -104,9 +104,9 @@ function App() {
         html.scrollHeight,
         html.offsetHeight
       );
-      html.style.height = height + 1 + "px";
-      body.style.height = height + 1 + "px";
-      window.scrollTo(0, 1);
+      html.style.height = height + 100 + "px";
+      body.style.height = height + 100 + "px";
+      window.scrollTo(0, 100);
     }, 1000);
   }, []);
   useEffect(() => {
