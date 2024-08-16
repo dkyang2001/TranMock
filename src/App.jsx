@@ -63,12 +63,7 @@ function App() {
   /*****************************************************************************/
 
   /********************** Map Initiator ****************************************/
-  const appHeight = () => {
-    const doc = document.documentElement;
-    doc.style.setProperty("--app-height", `${window.innerHeight}px`);
-  };
-  window.addEventListener("resize", appHeight);
-  appHeight();
+
   //create map on first render
   useEffect(() => {
     if (map.current) return;
@@ -98,6 +93,15 @@ function App() {
     getAgency(map.current.getBounds()).then((agencyList) =>
       setAgencyList(agencyList)
     );
+    window.addEventListener("load", () => {
+      window.scrollTo(1, 0);
+    });
+    const appHeight = () => {
+      const doc = document.documentElement;
+      doc.style.setProperty("--app-height", `${window.innerHeight}px`);
+    };
+    window.addEventListener("resize", appHeight);
+    appHeight();
   }, []);
   useEffect(() => {
     if (sidebarSetting.marker !== null) {
