@@ -1,11 +1,11 @@
 /* container section */
 .appContainer {
-  height: 100%;
-  width: 100%;
+  height: calc(100% + env(safe-area-inset-top));
+  width: 100dvw;
 }
 .mapContainer {
-  height: 100%;
-  width: 100%;
+  height: calc(100% + env(safe-area-inset-top));
+  width: 100dvw;
 }
 /***************************************************/
 
