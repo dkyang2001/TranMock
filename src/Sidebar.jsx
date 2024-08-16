@@ -1,5 +1,6 @@
 import styles from "./Sidebar.module.css";
 import React, { useImperativeHandle, useRef, forwardRef } from "react";
+import cx from "classnames";
 /*************************************************************
  * state explanation:
  * 1. No Agency, everything is empty
@@ -152,14 +153,7 @@ function BusToggleButton({ active, name, color, clickFunction }) {
         clickFunction();
       }}
     >
-      <div
-        className={styles.circle}
-        style={{
-          backgroundImage: active
-            ? "url('./src/assets/check-bold.svg')"
-            : "none",
-        }}
-      ></div>
+      <div className={cx(styles.circle, active ? styles.active : null)}></div>
       <div className={styles.shortName}>{name}</div>
     </div>
   );

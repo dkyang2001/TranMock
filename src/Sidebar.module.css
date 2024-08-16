@@ -105,6 +105,9 @@
   background-color: white;
   background-repeat: no-repeat;
 }
+.circle.active {
+  background-image: url("./assets/check-bold.svg");
+}
 /*short name shown within button */
 .shortName {
   flex: 0 0 auto;
