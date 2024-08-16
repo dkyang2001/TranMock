@@ -1,0 +1,49 @@
+/* popUp container size with active animation */
+.popUp {
+  width: 100vw;
+  height: 100vh;
+  position: relative;
+  z-index: 5;
+  background-color: white;
+  transition: transform 0.2s linear;
+}
+.active {
+  transform: translateY(-100%);
+}
+.mapContainer {
+  width: 100vw;
+  height: 90vh;
+}
+/***************************************************/
+
+/* header section */
+.header {
+  width: 100vw;
+  height: 10vh;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 10px;
+  padding: 10px 20px;
+}
+.routeTitle {
+  color: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.routeName {
+  max-width: 270px;
+  overflow: hidden; /* make sure it hides the content that overflows */
+  white-space: nowrap; /* don't break the line */
+  text-overflow: ellipsis;
+}
+.closeButton {
+  flex: 1;
+  color: white;
+}
+.header::after {
+  content: "";
+  flex: 1;
+}
+/***************************************************/

@@ -1,0 +1,231 @@
+/********************* sidebar container general styling***********************/
+.sidebar {
+  width: 100vw;
+  border-radius: 10% 10% 0 0;
+  position: relative;
+  z-index: 2;
+  transform: translateY(-100%);
+  overflow: hidden;
+  background-color: white;
+  box-shadow: 0 0 4px 1px gray;
+}
+/* hold Icon to display section can be "pulled" */
+.holdIcon {
+  position: relative;
+  width: 80px;
+  height: 2px;
+  border-radius: 2px;
+  border: 2px solid gray;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+/* sidebar title section */
+.titleContainer {
+  padding: 20px 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 18px;
+}
+/*both arrival&route cards have a right panel*/
+.cardRightPanel {
+  margin-left: auto;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+/****************************************************************************/
+
+/**************************card Container for sidebar*********************/
+/*Card within changes depending on state***/
+.cardContainer {
+  height: 0px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow-y: scroll;
+}
+/*************************************************************************/
+
+/***********************Below all applied based on state*******************/
+
+/************ state:1, no agency found *************/
+.noQuoteEnd {
+  margin-bottom: 50px;
+}
+.noneSection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+/**************************************************/
+
+/************* state:2&3, displays routes *********/
+.routeCard {
+  flex: 0 0 auto;
+  width: 100%;
+  height: 60px;
+  display: flex;
+  align-items: center;
+}
+/* routeCard displays route&agency name */
+.route_name {
+  font-size: 14px;
+  margin-bottom: 5px;
+}
+.agency_name {
+  font-size: 12px;
+  color: gray;
+}
+/*route button within route card */
+/*can toggle routes*/
+.button {
+  height: 35px;
+  width: 110px;
+  border-radius: 0% 40px 40px 0%;
+  padding-left: 10px;
+  margin-right: 20px;
+  border: 2px solid;
+  border-left: 0px solid;
+  display: flex;
+  align-items: center;
+  font-size: 18px;
+  font-weight: 600;
+  gap: 10px;
+  overflow-x: hidden;
+}
+/* circle inside button displays checkmark within*/
+.circle {
+  flex: 0 0 auto;
+  height: 20px;
+  width: 20px;
+  border-radius: 20px;
+  border: 2px solid gray;
+  background-color: white;
+  background-repeat: no-repeat;
+}
+/*short name shown within button */
+.shortName {
+  flex: 0 0 auto;
+  width: 200px;
+}
+/* arrow indicates popUp */
+.arrow {
+  margin-right: 10px;
+  height: 20px;
+  width: 20px;
+  background-image: url("./assets/chevron-right.svg");
+}
+/*****************************************************/
+/****************state 3&4, displays specific stop****/
+/*a stop icon displayed on title******/
+.stopPic {
+  flex: 0 0 auto;
+  height: 50px;
+  width: 50px;
+  --svg: url("./assets/stop-circle-outline.svg");
+  /* Chrome, still requires prefix in 2022 */
+  -webkit-mask-image: var(--svg);
+  /* Firefox and Safari */
+  mask-image: var(--svg);
+  background-color: black;
+}
+/*time section shows one arrival estimate*/
+.timeSection {
+  display: flex;
+  flex-direction: column;
+  padding-right: 10px;
+  align-items: center;
+  font-size: 12px;
+  color: #007fff;
+}
+.remaining {
+  font-size: 16px;
+  font-weight: 600;
+}
+/*wifi elements and animation for time*/
+.wifiIcon {
+  flex: 0 0 auto;
+  height: 25px;
+  width: 25px;
+  transform: rotate(-45deg);
+  position: relative;
+  left: 11px;
+  bottom: 11px;
+}
+.wifi.first {
+  position: relative;
+  height: 15px;
+  width: 15px;
+  border: 2px solid transparent;
+  border-top: 2px solid transparent;
+  border-radius: 50%;
+  bottom: 22.5px;
+  left: 7.5px;
+  animation: first 6s infinite;
+}
+@keyframes first {
+  19% {
+    border-top-color: transparent;
+  }
+  20% {
+    border-top-color: #007fff;
+  }
+  79% {
+    border-top-color: #007fff;
+  }
+  80% {
+    border-top-color: transparent;
+  }
+}
+.wifi.second {
+  height: 30px;
+  width: 30px;
+  border: 2px solid transparent;
+  border-top: 2px solid transparent;
+  border-radius: 50%;
+  animation: second 6s infinite;
+}
+@keyframes second {
+  39% {
+    border-top-color: transparent;
+  }
+  40% {
+    border-top-color: #007fff;
+  }
+  59% {
+    border-top-color: #007fff;
+  }
+  60% {
+    border-top-color: transparent;
+  }
+}
+/************************************/
+/******************************************************/
+
+/****state 4, displays arrival estimates of specific stop***/
+/*each arrival card shows each arrival estimates*/
+.arrivalCard {
+  flex: 0 0 auto;
+  width: 90%;
+  height: 70px;
+  padding: 15px 0px;
+  display: flex;
+  border-bottom: 0.2px solid gray;
+  align-items: center;
+}
+/*for vehicle info*/
+.arrivalCard .leftPanel {
+  height: 50px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+/* a bus stop icon within left Panel */
+.stopIcon {
+  height: 30px;
+  width: 30px;
+  background-image: url("./assets/bus-stop.svg");
+}
+/*****************************************************/
