@@ -4,11 +4,16 @@
   box-sizing: border-box;
   font-family: sans-serif;
 }
-html {
+:root {
+  --app-height: 100%;
+}
+html,
+body {
   width: 100vw;
   height: 100vh;
+  height: (--app-height);
+  overflow: hidden;
 }
 body {
-  overflow: hidden;
   overscroll-behavior: none;
 }

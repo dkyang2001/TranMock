@@ -63,6 +63,12 @@ function App() {
   /*****************************************************************************/
 
   /********************** Map Initiator ****************************************/
+  const appHeight = () => {
+    const doc = document.documentElement;
+    doc.style.setProperty("--app-height", `${window.innerHeight}px`);
+  };
+  window.addEventListener("resize", appHeight);
+  appHeight();
   //create map on first render
   useEffect(() => {
     if (map.current) return;
@@ -1030,10 +1036,6 @@ function App() {
   return (
     <>
       <Helmet>
-        <meta
-          name="viewport"
-          content="initial-scale=1, maximum-scale=1, width=device-width, height=device-height, viewport-fit=cover"
-        />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="mobile-web-app-capable" content="yes" />
       </Helmet>
