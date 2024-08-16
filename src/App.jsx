@@ -95,7 +95,7 @@ function App() {
     );
     setTimeout(() => {
       const body = document.body;
-      /*   const html = document.documentElement;
+      const html = document.documentElement;
 
       const height = Math.max(
         body.scrollHeight,
@@ -103,8 +103,9 @@ function App() {
         html.clientHeight,
         html.scrollHeight,
         html.offsetHeight
-      );*/
-      document.body.style.height = document.body.clientHeight + 1 + "px";
+      );
+      html.style.height = height + 1 + "px";
+      body.style.height = height + 1 + "px";
       window.scrollTo(0, 1);
     }, 1000);
   }, []);
