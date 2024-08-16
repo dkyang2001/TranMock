@@ -21,6 +21,7 @@ import PopUpMap from "./popUpMap.jsx";
 import Sidebar from "./Sidebar.jsx";
 import cx from "classnames";
 import * as turf from "@turf/turf";
+import { Helmet } from "react-helmet";
 function App() {
   /*********************   State/Ref Declaration *********************************/
   //viewport state
@@ -1028,6 +1029,10 @@ function App() {
   /*****************************************************************************/
   return (
     <>
+      <Helmet>
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="mobile-web-app-capable" content="yes" />
+      </Helmet>
       <div className={styles.appContainer}>
         <div
           className={cx(
