@@ -6,7 +6,7 @@
 }
 html,
 body {
-  min-height: calc(100dvh + env(safe-area-inset-top));
+  min-height: calc(100% + env(safe-area-inset-top));
   width: 100vw;
   overflow: hidden;
   overscroll-behavior: none;
