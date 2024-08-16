@@ -98,16 +98,9 @@ function App() {
       const html = document.documentElement;
 
       const height = body.clientHeight;
-      /*Math.max(
-        body.scrollHeight,
-        body.offsetHeight,
-        html.clientHeight,
-        html.scrollHeight,
-        html.offsetHeight
-      );*/
       html.style.height = height + 1 + "px";
       body.style.height = height + 1 + "px";
-      window.scrollTo(0, 1);
+      window.scrollTo(0, 10);
     }, 1000);
   }, []);
   useEffect(() => {
