@@ -17,7 +17,7 @@
   transition: visibility 0.1s ease-in, opacity 0.1s ease-in;
   position: absolute;
   left: 50%;
-  top: 8%;
+  top: 7%;
   width: 210px;
   border-radius: 40px;
   padding: 10px 15px;
@@ -73,6 +73,6 @@
   border-radius: 30px;
   background-color: #214a4f;
   background-image: url("./assets/stop-circle-outline.svg");
-  z-index: 2;
+  z-index: 3;
 }
 /***************************************************/

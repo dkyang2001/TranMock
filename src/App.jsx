@@ -99,9 +99,21 @@ function App() {
       setStopFilter(false);
     }
     const onClick = (e) => {
-      if (e.features[0].layer.paint["circle-opacity"] === 1) {
+      //bbox for increasing click tolerance
+      const bbox = [
+        [e.point.x - 5, e.point.y - 5],
+        [e.point.x + 5, e.point.y + 5],
+      ];
+      // Find features intersecting the bounding box.
+      const selectedFeatures = map.current.queryRenderedFeatures(bbox, {
+        layers: ["stops"],
+      });
+      if (
+        selectedFeatures &&
+        selectedFeatures[0].layer.paint["circle-opacity"] === 1
+      ) {
         map.current.flyTo({
-          center: e.features[0].geometry.coordinates,
+          center: selectedFeatures[0].geometry.coordinates,
           padding: { bottom: 250 },
           duration: 200,
         });
@@ -110,19 +122,19 @@ function App() {
         }
         const el = createBusStopElement();
         const marker = new maplibregl.Marker({ element: el })
-          .setLngLat(e.features[0].geometry.coordinates)
+          .setLngLat(selectedFeatures[0].geometry.coordinates)
           .addTo(map.current);
         setSidebarSetting({
           state: 3,
-          stopID: e.features[0].properties.stopID,
+          stopID: selectedFeatures[0].properties.stopID,
           marker: marker,
         });
         setSidebarPosition({ active: true, stopClick: true });
       }
     };
-    map.current.on("click", "stops", onClick);
+    map.current.on("click", onClick);
     return () => {
-      map.current.off("click", "stops", onClick);
+      map.current.off("click", onClick);
     };
   }, [sidebarSetting]);
   /**********Configure stationary data & draw layers in mapbox **********/

@@ -1,5 +1,10 @@
 import styles from "./Sidebar.module.css";
-import React, { useImperativeHandle, useRef, forwardRef } from "react";
+import React, {
+  useImperativeHandle,
+  useRef,
+  forwardRef,
+  useEffect,
+} from "react";
 import cx from "classnames";
 /*************************************************************
  * state explanation:
@@ -18,6 +23,18 @@ const Sidebar = forwardRef(function Sidebar(
       return cardContainer.current;
     },
   }));
+  useEffect(() => {
+    //add border on sidebar during scroll
+    if (cardContainer.current) {
+      cardContainer.current.addEventListener("scroll", (e) => {
+        if (e.currentTarget.scrollTop > 10) {
+          cardContainer.current.style.borderTop = "2px solid 	#e9e9e9";
+        } else {
+          cardContainer.current.style.borderTop = "0px solid	#e9e9e9";
+        }
+      });
+    }
+  }, []);
   /******* Things for state 1 where no agency exists*********************/
   const height = cardContainer.current ? cardContainer.current.clientHeight : 0;
   const largeSectionOpacity = height / 270;
