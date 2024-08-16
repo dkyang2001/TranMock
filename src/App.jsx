@@ -79,7 +79,7 @@ function App() {
         compact: true,
         collapsed: true,
       }),
-      "top-right"
+      "bottom-left"
     );
     setPrevBound(map.current.getBounds());
     //viewport set on move
@@ -731,13 +731,28 @@ function App() {
       }
     }
     map.current.on("move", mapMoveEvent); //apply event
-    let target = sidebar.current.getContainer();
+    const target = sidebar.current.getContainer();
     //set final height depending on current state
     const height = sidebarPosition.active ? 300 : 0;
     const difference = height - target.clientHeight;
     function easing(t) {
       return t * (2 - t);
     }
+    //update attribution height based on sidebarContainer
+    function updateAttributionMargin() {
+      const target = sidebar.current.getContainer();
+      const attributionSection = document.querySelector(
+        ".maplibregl-ctrl-bottom-left"
+      );
+      const titleHeight = target.parentElement.children[1].clientHeight;
+      attributionSection.style.marginBottom =
+        target.clientHeight + titleHeight + "px";
+    }
+    //animate attribution margin along with sidebar
+    let marginInterval = setInterval(() => {
+      updateAttributionMargin();
+    }, 20);
+
     //create the animation on sidebar
     let animation = target.animate(
       [{ height: target.clientHeight + "px" }, { height: height + "px" }],
@@ -750,7 +765,11 @@ function App() {
     //on finish cancel animation to remove forward fill and set height
     animation.onfinish = function () {
       animation.cancel();
+      //end updating interval
+      clearInterval(marginInterval);
       target.style.height = height + "px";
+      //update margin for the last time
+      updateAttributionMargin();
     };
     //move map along with sidebar animation only if user slided up/down sidebar
     if (!sidebarPosition.mapMove && !sidebarPosition.stopClick) {
@@ -872,8 +891,15 @@ function App() {
         map.current.panBy([0, move / 2], {
           duration: 1,
         });
+        const newHeight = Math.min(300, target.clientHeight + move);
         //set new height
-        target.style.height = Math.min(300, target.clientHeight + move) + "px";
+        target.style.height = newHeight + "px";
+        //set attribution margin;
+        const attributionSection = document.querySelector(
+          ".maplibregl-ctrl-bottom-left"
+        );
+        const titleHeight = target.parentElement.children[1].clientHeight;
+        attributionSection.style.marginBottom = newHeight + titleHeight + "px";
       }
       //set new offset on current position
       target.offset = e.touches[0].pageY;

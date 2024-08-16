@@ -36,7 +36,7 @@ const PopUpMap = forwardRef(function PopUpMap(
       new maplibregl.AttributionControl({
         compact: true,
       }),
-      "top-right"
+      "bottom-left"
     );
     //set viewport on move
     map.current.on("move", () => {
@@ -89,17 +89,15 @@ const PopUpMap = forwardRef(function PopUpMap(
   /*************************** popUp activation **********************************/
   //initiating popUp when open
   useEffect(() => {
-    function setRouteStopFilters() {
-      const tagFilter = ["any"].concat([
-        ["in", routeInfo.route_id, ["get", "routes"]],
-      ]);
-      map.current.setFilter("routes", tagFilter);
-      let stopFilter = [...tagFilter];
-      stopFilter = ["all", stopFilter, ["!=", stop.stop_id, ["get", "stopID"]]];
-      map.current.setFilter("stops", stopFilter);
-      map.current.setFilter("stops_shadow", stopFilter);
-    }
     if (!active) return;
+    //set attribution margin;
+    const target = sidebar.current.getContainer();
+    const attributionSection = document.querySelectorAll(
+      ".maplibregl-ctrl-bottom-left"
+    )[1];
+    const titleHeight = target.parentElement.children[1].clientHeight;
+    attributionSection.style.marginBottom =
+      target.clientHeight + titleHeight + "px";
     //fit bounds of popUp depending on haveStop variable
     if (haveStop) {
       map.current.setCenter(stop.coordinates);
@@ -111,7 +109,6 @@ const PopUpMap = forwardRef(function PopUpMap(
         duration: 0,
       });
     }
-    setRouteStopFilters();
     if (busArray && busArray.length > 0) {
       //if route was already active, move markers to popUp map
       if (routeInfo.active) {
@@ -129,6 +126,18 @@ const PopUpMap = forwardRef(function PopUpMap(
       }
     };
   }, [active]);
+  useEffect(() => {
+    if (stop !== null) {
+      const tagFilter = ["any"].concat([
+        ["in", routeInfo.route_id, ["get", "routes"]],
+      ]);
+      map.current.setFilter("routes", tagFilter);
+      let stopFilter = [...tagFilter];
+      stopFilter = ["all", stopFilter, ["!=", stop.stop_id, ["get", "stopID"]]];
+      map.current.setFilter("stops", stopFilter);
+      map.current.setFilter("stops_shadow", stopFilter);
+    }
+  }, [stop]);
   /*******************************************************************************/
 
   /*************************** sidebar animation **********************************/
@@ -152,6 +161,20 @@ const PopUpMap = forwardRef(function PopUpMap(
     function easing(t) {
       return t * (2 - t);
     }
+    //update attribution height based on sidebarContainer
+    function updateAttributionMargin() {
+      const target = sidebar.current.getContainer();
+      const attributionSection = document.querySelectorAll(
+        ".maplibregl-ctrl-bottom-left"
+      )[1];
+      const titleHeight = target.parentElement.children[1].clientHeight;
+      attributionSection.style.marginBottom =
+        target.clientHeight + titleHeight + "px";
+    }
+    //animate attribution margin along with sidebar
+    let marginInterval = setInterval(() => {
+      updateAttributionMargin();
+    }, 20);
     //create the animation on sidebar
     let animation = target.animate(
       [{ height: target.clientHeight + "px" }, { height: height + "px" }],
@@ -164,7 +187,11 @@ const PopUpMap = forwardRef(function PopUpMap(
     //on finish cancel animation to remove forward fill and set height
     animation.onfinish = function () {
       animation.cancel();
+      //end updating interval
+      clearInterval(marginInterval);
       target.style.height = height + "px";
+      //update margin for the last time
+      updateAttributionMargin();
     };
     //move map along with sidebar animation only if user slided up/down sidebar
     if (!sidebarPosition.mapMove) {
@@ -199,7 +226,7 @@ const PopUpMap = forwardRef(function PopUpMap(
   function touchMove(e) {
     if (e.touches.length == 1) {
       //   e.preventDefault();
-      let target = sidebar.current.getContainer();
+      const target = sidebar.current.getContainer();
       //if user started moving
       if (target.offset !== null) {
         const move = target.offset - e.touches[0].pageY;
@@ -207,8 +234,15 @@ const PopUpMap = forwardRef(function PopUpMap(
         map.current.panBy([0, move / 2], {
           duration: 1,
         });
+        const newHeight = Math.min(300, target.clientHeight + move);
         //set new height
-        target.style.height = Math.min(300, target.clientHeight + move) + "px";
+        target.style.height = newHeight + "px";
+        //set attribution margin;
+        const attributionSection = document.querySelectorAll(
+          ".maplibregl-ctrl-bottom-left"
+        )[1];
+        const titleHeight = target.parentElement.children[1].clientHeight;
+        attributionSection.style.marginBottom = newHeight + titleHeight + "px";
       }
       //set new offset on current position
       target.offset = e.touches[0].pageY;
