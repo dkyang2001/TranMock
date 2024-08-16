@@ -4,12 +4,9 @@
   box-sizing: border-box;
   font-family: sans-serif;
 }
-:root {
-  overflow: hidden;
-}
 html,
 body {
-  min-height: calc(100% + env(safe-area-inset-top));
+  height: calc(100% + env(safe-area-inset-top));
   width: 100vw;
   overflow: hidden;
   overscroll-behavior: none;
