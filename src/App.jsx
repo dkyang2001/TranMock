@@ -93,15 +93,6 @@ function App() {
     getAgency(map.current.getBounds()).then((agencyList) =>
       setAgencyList(agencyList)
     );
-    setTimeout(() => {
-      const body = document.body;
-      const html = document.documentElement;
-
-      const height = body.clientHeight;
-      html.style.height = height + 1 + "px";
-      body.style.height = height + 1 + "px";
-      window.scrollTo(0, 100);
-    }, 1000);
   }, []);
   useEffect(() => {
     if (sidebarSetting.marker !== null) {
