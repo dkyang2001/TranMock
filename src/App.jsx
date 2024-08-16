@@ -1033,7 +1033,15 @@ function App() {
   return (
     <>
       <Helmet>
+        <meta
+          name="viewport"
+          content="minimum-scale=1, initial-scale=1, width=device-width, shrink-to-fit=no, viewport-fit=cover"
+        />
         <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta
+          name="apple-mobile-web-app-status-bar-style"
+          content="black-translucent"
+        ></meta>
         <meta name="mobile-web-app-capable" content="yes" />
       </Helmet>
       <div className={styles.appContainer}>
