@@ -4,6 +4,9 @@
   box-sizing: border-box;
   font-family: sans-serif;
 }
+html {
+  height: 101vh;
+}
 body {
   overflow: hidden;
   overscroll-behavior: none;

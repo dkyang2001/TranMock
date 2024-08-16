@@ -28,7 +28,7 @@ function App() {
   const [viewport, setViewport] = useState({
     lat: 38.0336,
     long: -78.508,
-    zoom: 13,
+    zoom: 12,
   });
   const [prevBound, setPrevBound] = useState(null);
   //api data storage states
@@ -1030,7 +1030,6 @@ function App() {
   return (
     <>
       <Helmet>
-        <meta name="viewport" content="minimal-ui" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="mobile-web-app-capable" content="yes" />
       </Helmet>
