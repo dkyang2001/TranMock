@@ -93,15 +93,18 @@ function App() {
     getAgency(map.current.getBounds()).then((agencyList) =>
       setAgencyList(agencyList)
     );
-    window.addEventListener("load", () => {
-      window.scrollTo(1, 0);
-    });
-    const appHeight = () => {
-      const doc = document.documentElement;
-      doc.style.setProperty("--app-height", `${window.innerHeight}px`);
-    };
-    window.addEventListener("resize", appHeight);
-    appHeight();
+    const body = document.body;
+    const html = document.documentElement;
+
+    const height = Math.max(
+      body.scrollHeight,
+      body.offsetHeight,
+      html.clientHeight,
+      html.scrollHeight,
+      html.offsetHeight
+    );
+    document.body.style.height = height + 1 + "px";
+    window.scrollTo(0, 1);
   }, []);
   useEffect(() => {
     if (sidebarSetting.marker !== null) {
@@ -1040,32 +1043,7 @@ function App() {
   return (
     <>
       <Helmet>
-        <meta
-          name="viewport"
-          content="width=device-width, minimum-scale=1, maximum-scale=1"
-        />
         <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="black" />
-        <link rel="apple-touch-icon" href="apple-touch-icon-57x57.png" />
-        <link
-          rel="apple-touch-icon"
-          sizes="72x72"
-          href="apple-touch-icon-72x72.png"
-        />
-        <link
-          rel="apple-touch-icon"
-          sizes="114x114"
-          href="apple-touch-icon-114x114.png"
-        />
-        <link
-          rel="apple-touch-startup-image"
-          href="apple-touch-startup-image-320x460.png"
-        />
-        <link
-          rel="apple-touch-startup-image"
-          sizes="768x1004"
-          href="apple-touch-startup-image-768x1004.png"
-        />
         <meta name="mobile-web-app-capable" content="yes" />
       </Helmet>
       <div className={styles.appContainer}>
