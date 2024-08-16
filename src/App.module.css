@@ -1,10 +1,10 @@
 /* container section */
 .appContainer {
-  height: 100vh;
+  height: 100dvh;
   width: 100vw;
 }
 .mapContainer {
-  height: 100vh;
+  height: 100dvh;
   width: 100vw;
 }
 /***************************************************/
