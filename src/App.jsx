@@ -1101,6 +1101,7 @@ function App() {
         <div ref={mapContainer} className={styles.mapContainer} />
         <Sidebar
           ref={sidebar}
+          open={sidebarPosition.active}
           state={sidebarSetting.state}
           stop={
             sidebarSetting.stopID !== null

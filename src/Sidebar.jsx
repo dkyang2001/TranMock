@@ -14,7 +14,7 @@ import cx from "classnames";
  * 4. Sidebar in popUp, show arrival estimates
  * ************************************************************/
 const Sidebar = forwardRef(function Sidebar(
-  { state, stop, routes, arrival, color, distance, functions },
+  { state, stop, routes, arrival, color, open, distance, functions },
   Sidebar
 ) {
   const cardContainer = useRef(null);
@@ -23,18 +23,15 @@ const Sidebar = forwardRef(function Sidebar(
       return cardContainer.current;
     },
   }));
+
   useEffect(() => {
     //add border on sidebar during scroll
     if (cardContainer.current) {
       cardContainer.current.addEventListener("scroll", (e) => {
-        if (
-          e.currentTarget.scrollTop > 10 &&
-          e.currentTarget.clientHeight > 10
-        ) {
-          console.log(e.currentTarget.clientHeight);
-          cardContainer.current.style.borderTop = "2px solid 	#e9e9e9";
+        if (e.currentTarget.scrollTop > 10) {
+          cardContainer.current.classList.add(`${styles.active}`);
         } else {
-          cardContainer.current.style.borderTop = "0px solid	#e9e9e9";
+          cardContainer.current.classList.remove(`${styles.active}`);
         }
       });
     }
@@ -87,7 +84,10 @@ const Sidebar = forwardRef(function Sidebar(
           </>
         )}
       </div>
-      <div ref={cardContainer} className={`${styles.cardContainer} `}>
+      <div
+        ref={cardContainer}
+        className={cx(styles.cardContainer, !open ? styles.closed : null)}
+      >
         {state == 1 ? (
           <div
             className={styles.noneSection}
