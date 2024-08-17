@@ -15,9 +15,6 @@
   height: 90dvh;
   width: 100vw;
 }
-/***************************************************/
-
-/* header section */
 .header {
   height: 10dvh;
   width: 100vw;
@@ -27,6 +24,23 @@
   gap: 10px;
   padding: 10px 20px;
 }
+@media screen and (min-width: 320px) and (max-width: 767px) and (orientation: landscape) {
+  .header {
+    height: 10vw;
+    width: 100dvh;
+  }
+  .popUp {
+    height: 100vw;
+    width: 100dvh;
+  }
+  .mapContainer {
+    height: 90vw;
+    width: 100dvh;
+  }
+}
+/***************************************************/
+
+/* header section */
 .routeTitle {
   color: white;
   display: flex;
