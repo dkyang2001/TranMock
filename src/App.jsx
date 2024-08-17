@@ -93,7 +93,8 @@ function App() {
       setAgencyList(agencyList)
     );
     //lock screen orientation
-    screen.orientation.lock("portrait").then(
+    const myScreenOrientation = window.screen.orientation;
+    myScreenOrientation.lock("portrait").then(
       (success) => console.log(success),
       (failure) => console.log(failure)
     );
