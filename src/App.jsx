@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import styles from "./App.module.css";
@@ -21,7 +21,6 @@ import PopUpMap from "./popUpMap.jsx";
 import Sidebar from "./Sidebar.jsx";
 import cx from "classnames";
 import * as turf from "@turf/turf";
-import { Helmet } from "react-helmet";
 function App() {
   /*********************   State/Ref Declaration *********************************/
   //viewport state
