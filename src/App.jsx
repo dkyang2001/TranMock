@@ -745,7 +745,7 @@ function App() {
     map.current.on("move", mapMoveEvent); //apply event
     const target = sidebar.current.getContainer();
     //set final height depending on current state
-    const maxHeight = document.body.clientHeight > 700 ? 300 : 200;
+    const maxHeight = document.body.clientHeight > 700 ? 300 : 240;
     const height = sidebarPosition.active ? maxHeight : 0;
     const difference = height - target.clientHeight;
     function easing(t) {
@@ -904,7 +904,7 @@ function App() {
         map.current.panBy([0, move / 2], {
           duration: 1,
         });
-        const maxHeight = document.body.clientHeight > 700 ? 300 : 200;
+        const maxHeight = document.body.clientHeight > 700 ? 300 : 240;
         const newHeight = Math.min(maxHeight, target.clientHeight + move);
         //set new height
         target.style.height = newHeight + "px";
