@@ -94,7 +94,7 @@ function App() {
     );
     //lock screen orientation
     const myScreenOrientation = window.screen.orientation;
-    myScreenOrientation.lock("portrait").then(
+    myScreenOrientation.lock("portrait-primary").then(
       (success) => console.log(success),
       (failure) => console.log(failure)
     );
