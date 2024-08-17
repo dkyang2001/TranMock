@@ -1,6 +1,6 @@
 /* popUp container size with active animation */
 .popUp {
-  width: 100dvw;
+  width: 100vw;
   height: 100dvh;
   position: relative;
   z-index: 5;
@@ -12,14 +12,14 @@
   transform: translateY(-100%);
 }
 .mapContainer {
-  width: 100%;
+  width: 100vw;
   height: 90dvh;
 }
 /***************************************************/
 
 /* header section */
 .header {
-  width: 100%;
+  width: 100vw;
   height: 10dvh;
   display: flex;
   justify-content: space-between;

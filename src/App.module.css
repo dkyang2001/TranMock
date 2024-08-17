@@ -1,12 +1,12 @@
 /* container section */
 .appContainer {
-  width: 100%;
+  width: 100vw;
   height: 100dvh;
   overflow: hidden;
 }
 .mapContainer {
   height: 100dvh;
-  width: 100%;
+  width: 100vw;
 }
 /***************************************************/
 
@@ -20,7 +20,7 @@
   top: 7%;
   width: 210px;
   border-radius: 40px;
-  padding: 10px 15px;
+  padding: 5px 15px;
   font-size: 14px;
   transform: translateX(-50%);
   background-color: #214a4f;
