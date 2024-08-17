@@ -92,6 +92,11 @@ function App() {
     getAgency(map.current.getBounds()).then((agencyList) =>
       setAgencyList(agencyList)
     );
+    //lock screen orientation
+    screen.orientation.lock("portrait").then(
+      (success) => console.log(success),
+      (failure) => console.log(failure)
+    );
   }, []);
   useEffect(() => {
     if (sidebarSetting.marker !== null) {
