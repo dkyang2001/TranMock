@@ -45,6 +45,7 @@
   flex-direction: column;
   align-items: center;
   overflow-y: scroll;
+  margin-bottom: env(safe-area-inset-bottom);
 }
 /*************************************************************************/
 
