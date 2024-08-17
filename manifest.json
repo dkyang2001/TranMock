@@ -1,4 +1,5 @@
 {
+  "start_url": "https://transmock.netlify.app",
   "display": "standalone",
   "orientation": "portrait"
 }
