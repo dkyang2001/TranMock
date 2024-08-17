@@ -27,7 +27,10 @@ const Sidebar = forwardRef(function Sidebar(
     //add border on sidebar during scroll
     if (cardContainer.current) {
       cardContainer.current.addEventListener("scroll", (e) => {
-        if (e.currentTarget.scrollTop > 10) {
+        if (
+          e.currentTarget.scrollTop > 10 &&
+          e.currentTarget.clientHeight > 0
+        ) {
           cardContainer.current.style.borderTop = "2px solid 	#e9e9e9";
         } else {
           cardContainer.current.style.borderTop = "0px solid	#e9e9e9";
