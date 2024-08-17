@@ -29,8 +29,9 @@ const Sidebar = forwardRef(function Sidebar(
       cardContainer.current.addEventListener("scroll", (e) => {
         if (
           e.currentTarget.scrollTop > 10 &&
-          e.currentTarget.clientHeight > 0
+          e.currentTarget.clientHeight > 10
         ) {
+          console.log(e.currentTarget.clientHeight);
           cardContainer.current.style.borderTop = "2px solid 	#e9e9e9";
         } else {
           cardContainer.current.style.borderTop = "0px solid	#e9e9e9";
