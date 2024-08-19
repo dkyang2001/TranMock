@@ -1,7 +1,6 @@
 import polyline from "@mapbox/polyline";
 
 export async function getAgency(bounds) {
-  console.log("agency");
   let url =
     "https://transloc-api-1-2.p.rapidapi.com/agencies.json?callback=call";
   const options = {
@@ -40,7 +39,6 @@ function agencyToString(agencyList) {
   return agencyString;
 }
 export async function getRoutes(agencyList) {
-  console.log("routes");
   let url = "https://transloc-api-1-2.p.rapidapi.com/routes.json?callback=call";
   const options = {
     method: "GET",
@@ -63,7 +61,6 @@ export async function getRoutes(agencyList) {
   }
 }
 export async function getAllSegments(agencyList) {
-  console.log("segments");
   let url =
     "https://transloc-api-1-2.p.rapidapi.com/segments.json?callback=call";
   const options = {
@@ -94,7 +91,6 @@ export async function getAllSegments(agencyList) {
   }
 }
 export async function getRouteSegments(agencyList, route) {
-  console.log("segments");
   let url =
     "https://transloc-api-1-2.p.rapidapi.com/segments.json?callback=call";
   const options = {
@@ -131,7 +127,6 @@ export async function getRouteSegments(agencyList, route) {
   }
 }
 export async function getStops(agencyList) {
-  console.log("stops");
   let url = "https://transloc-api-1-2.p.rapidapi.com/stops.json?callback=call";
   const options = {
     method: "GET",
@@ -157,7 +152,6 @@ function getColor(routes, routeID) {
   }
 }
 export async function getBuses(agencyList, routes) {
-  console.log("buses");
   let url =
     "https://transloc-api-1-2.p.rapidapi.com/vehicles.json?callback=call";
   const options = {
@@ -185,7 +179,6 @@ export async function getBuses(agencyList, routes) {
   }
 }
 export async function getArrivalEstimates(agencyList) {
-  console.log("arrival");
   let url =
     "https://transloc-api-1-2.p.rapidapi.com/arrival-estimates.json?callback=call";
   const options = {

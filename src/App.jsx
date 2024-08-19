@@ -81,6 +81,8 @@ function App() {
       "bottom-left"
     );
     setPrevBound(map.current.getBounds());
+    //disable 3d tilt
+    map.current.touchPitch.disable();
     //viewport set on move
     map.current.on("move", () => {
       const newLong = map.current.getCenter().lng.toFixed(4);

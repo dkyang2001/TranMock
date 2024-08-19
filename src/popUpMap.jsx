@@ -104,8 +104,9 @@ const PopUpMap = forwardRef(function PopUpMap(
       map.current.setZoom(14);
       setSidebarPosition({ active: true });
     } else {
+      map.current.setZoom(5);
       map.current.fitBounds(routeInfo.bounds, {
-        padding: { top: 10, bottom: 130, left: 10, right: 10 },
+        padding: { top: 30, bottom: 130, left: 10, right: 10 },
         duration: 0,
       });
     }
