@@ -96,6 +96,14 @@ function App() {
       }),
       "bottom-left"
     );
+    map.current.addControl(
+      new maplibregl.GeolocateControl({
+        positionOptions: {
+          enableHighAccuracy: true,
+        },
+        trackUserLocation: true,
+      })
+    );
     setPrevBound(map.current.getBounds());
     //disable 3d tilt
     map.current.touchPitch.disable();
