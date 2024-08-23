@@ -5,13 +5,25 @@
   position: relative;
   z-index: 2;
   transform: translateY(-100%);
-  overflow: hidden;
   background-color: white;
   box-shadow: 0 0 4px 1px gray;
 }
 /* hold Icon to display section can be "pulled" */
+.geoLocate {
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background-color: white;
+  left: calc(100% - 80px);
+  transform: translateY(-110%);
+  box-shadow: 0 0 4px 1px gray;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
 .holdIcon {
-  position: relative;
+  position: absolute;
   width: 80px;
   height: 2px;
   border-radius: 2px;
@@ -22,11 +34,15 @@
 }
 /* sidebar title section */
 .titleContainer {
-  padding: 20px 20px;
+  padding: 25px 30px;
   display: flex;
   align-items: center;
   gap: 10px;
   font-size: 18px;
+}
+.titleContainer .heart {
+  flex: 0 0 auto;
+  margin-left: auto;
 }
 /*both arrival&route cards have a right panel*/
 .cardRightPanel {
@@ -77,11 +93,17 @@
   height: 60px;
   display: flex;
   align-items: center;
+  gap: 10px;
 }
 /* routeCard displays route&agency name */
+.nameSection {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+}
 .route_name {
   font-size: 14px;
-  margin-bottom: 5px;
 }
 .agency_name {
   font-size: 12px;
@@ -90,11 +112,10 @@
 /*route button within route card */
 /*can toggle routes*/
 .button {
-  height: 35px;
-  width: 110px;
+  height: 30px;
+  width: 90px;
   border-radius: 0% 40px 40px 0%;
   padding-left: 10px;
-  margin-right: 20px;
   border: 2px solid;
   border-left: 0px solid;
   display: flex;
@@ -120,7 +141,8 @@
 /*short name shown within button */
 .shortName {
   flex: 0 0 auto;
-  width: 200px;
+  font-size: 16px;
+  max-height: 16px;
 }
 /* arrow indicates popUp */
 .arrow {

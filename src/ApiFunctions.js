@@ -151,6 +151,34 @@ function getColor(routes, routeID) {
     }
   }
 }
+export async function getCATBuses(routes) {
+  let url =
+    "https://catpublic.etaspot.net/service.php?service=get_vehicles&includeETAData=1&inService=1&orderedETAArray=1&token=TESTING";
+  try {
+    const response = await fetch(url);
+    let result = await response.json();
+    const vehicleList = result.get_vehicles;
+
+    //give bus the same color as its route
+    if (!vehicleList || vehicleList.length === 0) return [];
+    return vehicleList.map((bus) => {
+      return { ...bus, color: getColor(routes, String(bus.routeID)) };
+    });
+  } catch (error) {
+    console.error(error);
+  }
+}
+export async function getCATArrivals() {
+  let url =
+    "https://catpublic.etaspot.net/service.php?service=get_vehicles&includeETAData=1&inService=1&orderedETAArray=1&token=TESTING";
+  try {
+    const response = await fetch(url);
+    let result = await response.json();
+    return result.get_vehicles;
+  } catch (error) {
+    console.error(error);
+  }
+}
 export async function getBuses(agencyList, routes) {
   let url =
     "https://transloc-api-1-2.p.rapidapi.com/vehicles.json?callback=call";
@@ -170,7 +198,7 @@ export async function getBuses(agencyList, routes) {
       vehicleList.push(...vehicles);
     });
     //give bus the same color as its route
-    if (vehicleList.length === 0) return;
+    if (!vehicleList || vehicleList.length === 0) return [];
     return vehicleList.map((bus) => {
       return { ...bus, color: getColor(routes, bus.route_id) };
     });

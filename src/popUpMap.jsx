@@ -11,7 +11,7 @@ import cx from "classnames";
 import styles from "./popUpMap.module.css";
 import Sidebar from "./Sidebar";
 const PopUpMap = forwardRef(function PopUpMap(
-  { active, routeInfo, busArray, stop, arrival, haveStop, functions },
+  { active, routeInfo, busArray, stop, arrival, haveStop, favorite, functions },
   popUpMap
 ) {
   //viewport state
@@ -79,11 +79,11 @@ const PopUpMap = forwardRef(function PopUpMap(
 
   //Since BusStop Marker changes in state, need to reset onClick
   useEffect(() => {
-    map.current.on("click", "stops", functions[3]);
+    map.current.on("click", "stops", functions.popUpSetBusStop);
     return () => {
-      map.current.off("click", "stops", functions[3]);
+      map.current.off("click", "stops", functions.popUpSetBusStop);
     };
-  }, [functions[3]]);
+  }, [functions.popUpSetBusStop]);
   /*******************************************************************************/
 
   /*************************** popUp activation **********************************/
@@ -104,7 +104,6 @@ const PopUpMap = forwardRef(function PopUpMap(
       map.current.setZoom(14);
       setSidebarPosition({ active: true });
     } else {
-      map.current.setZoom(5);
       map.current.fitBounds(routeInfo.bounds, {
         padding: { top: 30, bottom: 130, left: 10, right: 10 },
         duration: 0,
@@ -114,15 +113,24 @@ const PopUpMap = forwardRef(function PopUpMap(
       //if route was already active, move markers to popUp map
       if (routeInfo.active) {
         busArray.map((bus) => {
-          functions[1](bus.vehicle_id);
+          functions.moveBusToPopUp(bus.vehicle_id);
         });
       }
     }
     return () => {
+      //remove padding for next popUp
+      map.current.flyTo({
+        center: stop.coordinates,
+        padding: { bottom: 0 },
+        zoom: 5,
+        duration: 0,
+      });
+      //reset padding for next popUp
+      map.current.fitBounds(map.current.getBounds(), 0);
       //if route was already active,move markers back to original map
       if (routeInfo.active && busArray && busArray.length > 0) {
         busArray.map((bus) => {
-          functions[2](bus.vehicle_id);
+          functions.moveBusToOriginal(bus.vehicle_id);
         });
       }
     };
@@ -265,7 +273,9 @@ const PopUpMap = forwardRef(function PopUpMap(
     setSidebarPosition({ active: active });
   }
   function clickOpen(e) {
-    setSidebarPosition({ active: true });
+    if (sidebar.current.getContainer().clientHeight < 10) {
+      setSidebarPosition({ active: true });
+    }
   }
   /*******************************************************************************/
 
@@ -301,12 +311,12 @@ const PopUpMap = forwardRef(function PopUpMap(
     <div className={cx(styles.popUp, active ? styles.active : null)}>
       <div
         className={styles.header}
-        style={{ backgroundColor: active ? "#" + routeInfo.color : "white" }}
+        style={{ backgroundColor: active ? routeInfo.color : "white" }}
       >
         <div
           className={styles.closeButton}
           onClick={() => {
-            functions[0]();
+            functions.closePopUp(routeInfo.route_id);
             setSidebarPosition(false);
           }}
         >
@@ -331,7 +341,16 @@ const PopUpMap = forwardRef(function PopUpMap(
           stop={stop}
           arrival={processArrival(arrival)}
           color={routeInfo.color}
-          functions={[0, 0, touchStart, touchMove, touchEnd, clickOpen]}
+          favorite={favorite}
+          functions={{
+            touchStart: touchStart,
+            touchMove: touchMove,
+            touchEnd: touchEnd,
+            clickOpen: clickOpen,
+            toggleFavorite: () => {
+              functions.toggleFavorite(routeInfo.route_id);
+            },
+          }}
         />
       ) : null}
     </div>

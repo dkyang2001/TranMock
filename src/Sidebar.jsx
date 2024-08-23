@@ -4,6 +4,7 @@ import React, {
   useRef,
   forwardRef,
   useEffect,
+  useState,
 } from "react";
 import cx from "classnames";
 /*************************************************************
@@ -14,9 +15,21 @@ import cx from "classnames";
  * 4. Sidebar in popUp, show arrival estimates
  * ************************************************************/
 const Sidebar = forwardRef(function Sidebar(
-  { state, stop, routes, arrival, color, open, distance, functions },
+  {
+    state,
+    stop,
+    routes,
+    arrival,
+    color,
+    open,
+    distance,
+    favorite,
+    geoLocOn,
+    functions,
+  },
   Sidebar
 ) {
+  const [click, setClick] = useState(0);
   const cardContainer = useRef(null);
   useImperativeHandle(Sidebar, () => ({
     getContainer: () => {
@@ -36,6 +49,19 @@ const Sidebar = forwardRef(function Sidebar(
       });
     }
   }, []);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      // simple click
+      if (click === 1) functions.enableGeo();
+      setClick(0);
+    }, 250);
+
+    // the duration between this click and the previous one
+    // is less than the value of delay = double-click
+    if (click === 2) functions.disableGeo();
+
+    return () => clearTimeout(timer);
+  }, [click]);
   /******* Things for state 1 where no agency exists*********************/
   const height = cardContainer.current ? cardContainer.current.clientHeight : 0;
   const largeSectionOpacity = height / 270;
@@ -50,13 +76,41 @@ const Sidebar = forwardRef(function Sidebar(
   }
   return (
     <div className={styles.sidebar}>
+      {state !== 4 && (
+        <div
+          className={styles.geoLocate}
+          onClick={() => setClick((prev) => prev + 1)}
+        >
+          <svg
+            width="40px"
+            height="40px"
+            viewBox="0 0 24 24"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M12 20C16.4183 20 20 16.4183 20 12M12 20C7.58172 20 4 16.4183 4 12M12 20V22M20 12C20 7.58172 16.4183 4 12 4M20 12H22M12 4C7.58172 4 4 7.58172 4 12M12 4V2M4 12H2"
+              stroke={!geoLocOn ? "gray" : "#0194c7"}
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            <circle
+              fill={!geoLocOn ? "gray" : "#0194c7"}
+              cx="12"
+              cy="12"
+              r="4"
+            />
+          </svg>
+        </div>
+      )}
       <div className={styles.holdIcon}></div>
       <div
         className={styles.titleContainer}
-        onTouchStart={functions[2]}
-        onTouchMove={functions[3]}
-        onTouchEnd={functions[4]}
-        onClick={functions[5]}
+        onTouchStart={functions.touchStart}
+        onTouchMove={functions.touchMove}
+        onTouchEnd={functions.touchEnd}
+        onClick={functions.clickOpen}
       >
         {state === 1 ? (
           <h5 style={{ opacity: smallSectionOpacity }}>
@@ -78,9 +132,33 @@ const Sidebar = forwardRef(function Sidebar(
           <>
             <div
               className={styles.stopPic}
-              style={{ backgroundColor: "#" + color }}
+              style={{ backgroundColor: color }}
             ></div>
             <h4>{stop.name}</h4>
+            <div
+              className={styles.heart}
+              onClick={() => {
+                functions.toggleFavorite();
+              }}
+            >
+              <svg
+                width="20px"
+                height="20px"
+                viewBox="0 0 24 24"
+                fill={favorite ? color : "none"}
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  fillRule="evenodd"
+                  clipRule="evenodd"
+                  d="M12 6.00019C10.2006 3.90317 7.19377 3.2551 4.93923 5.17534C2.68468 7.09558 2.36727 10.3061 4.13778 12.5772C5.60984 14.4654 10.0648 18.4479 11.5249 19.7369C11.6882 19.8811 11.7699 19.9532 11.8652 19.9815C11.9483 20.0062 12.0393 20.0062 12.1225 19.9815C12.2178 19.9532 12.2994 19.8811 12.4628 19.7369C13.9229 18.4479 18.3778 14.4654 19.8499 12.5772C21.6204 10.3061 21.3417 7.07538 19.0484 5.17534C16.7551 3.2753 13.7994 3.90317 12 6.00019Z"
+                  stroke={favorite ? color : "gray"}
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </div>
           </>
         )}
       </div>
@@ -122,7 +200,7 @@ function RouteCard({ state, route, functions }) {
     <div
       className={styles.routeCard}
       onClick={(e) => {
-        functions[1](route.route_id);
+        functions.routeClick(route.route_id);
       }}
     >
       <BusToggleButton
@@ -130,10 +208,29 @@ function RouteCard({ state, route, functions }) {
         name={route.short_name}
         color={route.color}
         clickFunction={() => {
-          functions[0](route.route_id);
+          functions.toggleActive(route.route_id);
         }}
       />
-      <div>
+      {route.favorite && (
+        <svg
+          width="20px"
+          height="20px"
+          viewBox="0 0 24 24"
+          fill={route.color}
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            fillRule="evenodd"
+            clipRule="evenodd"
+            d="M12 6.00019C10.2006 3.90317 7.19377 3.2551 4.93923 5.17534C2.68468 7.09558 2.36727 10.3061 4.13778 12.5772C5.60984 14.4654 10.0648 18.4479 11.5249 19.7369C11.6882 19.8811 11.7699 19.9532 11.8652 19.9815C11.9483 20.0062 12.0393 20.0062 12.1225 19.9815C12.2178 19.9532 12.2994 19.8811 12.4628 19.7369C13.9229 18.4479 18.3778 14.4654 19.8499 12.5772C21.6204 10.3061 21.3417 7.07538 19.0484 5.17534C16.7551 3.2753 13.7994 3.90317 12 6.00019Z"
+            stroke={route.color}
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      )}
+      <div className={styles.nameSection}>
         <div className={styles.route_name}>{route.long_name}</div>
         <div className={styles.agency_name}>{route.agencyName}</div>
       </div>
@@ -166,8 +263,8 @@ function BusToggleButton({ active, name, color, clickFunction }) {
     <div
       className={styles.button}
       style={{
-        backgroundColor: active ? "#" + color : "white",
-        borderColor: "#" + color,
+        backgroundColor: active ? color : "white",
+        borderColor: color,
       }}
       onClick={(e) => {
         e.stopPropagation();
