@@ -181,6 +181,8 @@ function App() {
         }
         // get the current users location
         navigator.geolocation.watchPosition(success, error, {
+          maximumAge: 60000,
+          timeout: 5000,
           enableHighAccuracy: true,
         });
       }
