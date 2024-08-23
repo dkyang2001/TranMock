@@ -182,7 +182,7 @@ function App() {
         // get the current users location
         navigator.geolocation.watchPosition(success, error, {
           maximumAge: 60000,
-          timeout: 5000,
+          timeout: 1000,
           enableHighAccuracy: true,
         });
       }
@@ -194,7 +194,7 @@ function App() {
     getUserLocation();
     const id = setInterval(() => {
       getUserLocation();
-    }, 2000);
+    }, 1000);
     return () => {
       clearInterval(id);
       if (geoLocMarker.marker) {
