@@ -119,24 +119,21 @@ function App() {
         navigator.userAgent.match(/(iPod|iPhone|iPad)/) &&
         navigator.userAgent.match(/AppleWebKit/)
       );
-      if (typeof DeviceOrientationEvent !== "function") {
-        alert("DeviceOrientationEvent not detected");
-      }
       DeviceOrientationEvent.requestPermission()
         .then((response) => {
           if (response === "granted") {
-            window.addEventListener(
-              "deviceorientation",
-              (e) => {
-                setHeading(e.webkitCompassHeading);
-              },
-              true
-            );
           } else {
             alert("has to be allowed!");
           }
         })
         .catch(() => alert("not supported"));
+      window.addEventListener(
+        "deviceorientation",
+        (e) => {
+          setHeading(e.webkitCompassHeading);
+        },
+        true
+      );
     }
   }, []);
   //map stop click
