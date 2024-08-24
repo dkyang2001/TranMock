@@ -213,7 +213,7 @@ function App() {
       })();
       if (isIOS) {
         window.alert("ios");
-        if (typeof DeviceMotionEvent.requestPermission === "function") {
+        if (typeof DeviceOrientationEvent.requestPermission === "function") {
           DeviceOrientationEvent.requestPermission()
             .then((response) => {
               if (response === "granted") {
