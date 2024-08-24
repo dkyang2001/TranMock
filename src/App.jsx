@@ -163,7 +163,7 @@ function App() {
   /********************** User location tracking ************************/
   useEffect(() => {
     if (!geoLocSetting) return;
-
+    let id;
     // if geolocation is supported by the users browser
     if (navigator.geolocation) {
       function success(position) {
@@ -178,9 +178,9 @@ function App() {
         console.error("Error getting user location:", error);
       }
       // get the current users location
-      navigator.geolocation.watchPosition(success, error, {
+      id = navigator.geolocation.watchPosition(success, error, {
         maximumAge: 60000,
-        timeout: 1000,
+        timeout: 100,
         enableHighAccuracy: true,
       });
     }
@@ -190,17 +190,20 @@ function App() {
     }
 
     return () => {
-      if (geoLocMarker.marker) {
-        geoLocMarker.marker.remove();
-        setGeoLocMarker({ marker: null });
-        setGeoLocCoord({});
-      }
+      setGeoLocCoord({});
+      navigator.geolocation.clearWatch(id);
       window.removeEventListener("deviceorientation", configureHeading);
     };
   }, [geoLocSetting]);
   useEffect(() => {
-    if (!geoLocSetting) return;
-
+    if (!geoLocSetting) {
+      //geoloc setting is disabled but marker still remains-remove marker
+      if (geoLocMarker.marker && Object.keys(geoLocCoord).length === 0) {
+        geoLocMarker.marker.remove();
+        setGeoLocMarker({ marker: null });
+      }
+      return;
+    }
     //check geoloc Marker already exists
     if (geoLocMarker.marker) {
       //check coordinates are valid
@@ -218,13 +221,25 @@ function App() {
       if (geoLocCoord.lat) {
         //create user marker and set map center
         const el = createGeoLocElement(heading);
-        const marker = new maplibregl.Marker({ element: el })
+        const marker = new maplibregl.Marker({
+          element: el,
+          rotationAlignment: "map",
+        })
           .setLngLat([geoLocCoord.lng, geoLocCoord.lat])
           .addTo(map.current);
-        map.current.flyTo({
-          center: [geoLocCoord.lng, geoLocCoord.lat],
-          duration: 0,
-        });
+        if (sidebarPosition.active) {
+          map.current.flyTo({
+            center: [geoLocCoord.lng, geoLocCoord.lat],
+            padding: { bottom: 400 },
+            duration: 0,
+          });
+        } else {
+          map.current.flyTo({
+            center: [geoLocCoord.lng, geoLocCoord.lat],
+            padding: { bottom: 100 },
+            duration: 0,
+          });
+        }
         setGeoLocMarker({ marker: marker });
       }
     }
@@ -304,9 +319,7 @@ function App() {
     }
   }
   function disableGeo() {
-    if (geoLocSetting) {
-      setGeoLocSetting(false);
-    }
+    setGeoLocSetting(false);
   }
   /**********************************************************************/
   /**********Configure stationary data & draw layers in mapbox **********/
