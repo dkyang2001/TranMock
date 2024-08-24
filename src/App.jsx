@@ -119,25 +119,22 @@ function App() {
         navigator.userAgent.match(/(iPod|iPhone|iPad)/) &&
         navigator.userAgent.match(/AppleWebKit/)
       );
-      if (isIOS) {
-        DeviceOrientationEvent.requestPermission()
-          .then((response) => {
-            if (response === "granted") {
-              window.addEventListener(
-                "deviceorientation",
-                (e) => {
-                  setHeading(e.webkitCompassHeading);
-                },
-                true
-              );
-            } else {
-              alert("has to be allowed!");
-            }
-          })
-          .catch(() => alert("not supported"));
-      } else {
-        window.addEventListener("deviceorientationabsolute", () => {}, true);
-      }
+
+      DeviceOrientationEvent.requestPermission()
+        .then((response) => {
+          if (response === "granted") {
+            window.addEventListener(
+              "deviceorientation",
+              (e) => {
+                setHeading(e.webkitCompassHeading);
+              },
+              true
+            );
+          } else {
+            alert("has to be allowed!");
+          }
+        })
+        .catch(() => alert("not supported"));
     }
   }, []);
   //map stop click
@@ -199,7 +196,6 @@ function App() {
           setGeoLocCoord({
             lng: longitude,
             lat: latitude,
-            heading: heading,
           });
         }
         function error(error) {
@@ -232,7 +228,6 @@ function App() {
   }, [geoLocSetting]);
   useEffect(() => {
     if (!geoLocSetting) return;
-    console.log(geoLocCoord);
     //convert heading variable to correct angle on screen
     let toCorrectAngle = (angle) => (angle + 180) % 360;
     //check geoloc Marker already exists
