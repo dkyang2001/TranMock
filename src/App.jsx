@@ -197,16 +197,17 @@ function App() {
     }, 1000);
 
     if (window.DeviceOrientationEvent) {
+      window.alert("event");
       const isIOS = !(
         navigator.userAgent.match(/(iPod|iPhone|iPad)/) &&
         navigator.userAgent.match(/AppleWebKit/)
       );
       if (isIOS) {
-        alert("ios");
+        window.alert("ios");
         DeviceOrientationEvent.requestPermission()
           .then((response) => {
             if (response === "granted") {
-              alert("granted");
+              window.alert("granted");
               window.addEventListener(
                 "deviceorientation",
                 (e) => {
@@ -215,7 +216,7 @@ function App() {
                 true
               );
             } else {
-              alert("has to be allowed!");
+              window.alert("has to be allowed!");
             }
           })
           .catch(() => alert("not supported"));
