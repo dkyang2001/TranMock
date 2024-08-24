@@ -38,6 +38,7 @@ function App() {
   });
   const [geoLocMarker, setGeoLocMarker] = useState({ marker: null });
   const [geoLocCoord, setGeoLocCoord] = useState({});
+  const [heading, setHeading] = useState(null);
   const [prevBound, setPrevBound] = useState(null);
   //api data storage states
   const [agencyList, setAgencyList] = useState(null);
@@ -96,14 +97,6 @@ function App() {
       }),
       "bottom-left"
     );
-    map.current.addControl(
-      new maplibregl.GeolocateControl({
-        positionOptions: {
-          enableHighAccuracy: true,
-        },
-        trackUserLocation: true,
-      })
-    );
     setPrevBound(map.current.getBounds());
     //disable 3d tilt
     map.current.touchPitch.disable();
@@ -120,6 +113,14 @@ function App() {
     );
     if (localStorage.getItem("favorites")) {
       setFavorites(JSON.parse(localStorage.getItem("favorites")));
+    }
+    if (window.DeviceOrientationEvent) {
+      // Listen for the deviceorientation event and handle the raw data
+      window.addEventListener("deviceorientation", function (event) {
+        if (event.webkitCompassHeading) {
+          setHeading(event.webkitCompassHeading);
+        }
+      });
     }
   }, []);
   //map stop click
@@ -222,24 +223,25 @@ function App() {
       //check coordinates are valid
       if (geoLocCoord.lat) {
         //filter out invalid heading to prev angle
-        const heading = !geoLocCoord.heading
-          ? geoLocMarker.heading
-          : toCorrectAngle(geoLocCoord.heading);
+        const angle = !heading
+          ? geoLocMarker.prevAngle
+          : toCorrectAngle(heading);
         //update marker coordinates and heading
         geoLocMarker.marker.setLngLat([geoLocCoord.lng, geoLocCoord.lat]);
         rotateGeoLoc(
           geoLocMarker.marker.getElement().firstChild.children[1],
-          heading,
-          geoLocMarker.heading
+          angle,
+          geoLocMarker.prevAngle
         );
+        setGeoLocMarker({ ...geoLocMarker, prevAngle: angle });
       }
     } else {
       //check coordinates are valid
       if (geoLocCoord.lat) {
         //filter out invalid heading to 0 degree
-        const heading = !geoLocCoord.heading ? 0 : geoLocCoord.heading;
+        const angle = !heading ? 0 : toCorrectAngle(heading);
         //create user marker and set map center
-        const el = createGeoLocElement(toCorrectAngle(heading));
+        const el = createGeoLocElement(angle);
         const marker = new maplibregl.Marker({ element: el })
           .setLngLat([geoLocCoord.lng, geoLocCoord.lat])
           .addTo(map.current);
@@ -247,10 +249,10 @@ function App() {
           center: [geoLocCoord.lng, geoLocCoord.lat],
           duration: 0,
         });
-        setGeoLocMarker({ marker: marker, prevAngle: heading });
+        setGeoLocMarker({ marker: marker, prevAngle: angle });
       }
     }
-  }, [geoLocCoord]);
+  }, [geoLocCoord, heading]);
   //enable geoLocation tracking
   function enableGeo() {
     if (!geoLocSetting) {
