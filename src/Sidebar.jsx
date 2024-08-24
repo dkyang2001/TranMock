@@ -25,6 +25,7 @@ const Sidebar = forwardRef(function Sidebar(
     distance,
     favorite,
     geoLocOn,
+    heading,
     functions,
   },
   Sidebar
@@ -118,7 +119,8 @@ const Sidebar = forwardRef(function Sidebar(
           </h5>
         ) : state === 2 ? (
           <h4>
-            Showing {countActiveRoutes()} of {routes.length} routes in this area
+            Showing {countActiveRoutes()} of {routes.length}
+            {heading} routes in this area
           </h4>
         ) : state === 3 ? (
           <>

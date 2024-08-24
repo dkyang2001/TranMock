@@ -38,7 +38,7 @@ function App() {
   });
   const [geoLocMarker, setGeoLocMarker] = useState({ marker: null });
   const [geoLocCoord, setGeoLocCoord] = useState({});
-  const [heading, setHeading] = useState(null);
+  const [heading, setHeading] = useState(0);
   const [prevBound, setPrevBound] = useState(null);
   //api data storage states
   const [agencyList, setAgencyList] = useState(null);
@@ -1435,6 +1435,7 @@ function App() {
           }
           routes={filterRoutes()}
           geoLocOn={geoLocSetting}
+          heading={heading}
           distance={sidebarSetting.state === 1 ? sidebarSetting.distance : null}
           functions={{
             toggleActive: toggleActive,
