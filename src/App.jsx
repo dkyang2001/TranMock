@@ -231,6 +231,7 @@ function App() {
           center: [geoLocCoord.lng, geoLocCoord.lat],
           duration: 0,
         });
+        setGeoLocMarker({ marker: marker });
       }
     }
   }, [geoLocCoord, heading]);
