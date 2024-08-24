@@ -119,8 +119,10 @@ function App() {
         navigator.userAgent.match(/(iPod|iPhone|iPad)/) &&
         navigator.userAgent.match(/AppleWebKit/)
       );
-
-      window.DeviceOrientationEvent.requestPermission()
+      if (typeof DeviceOrientationEvent !== "function") {
+        alert("DeviceOrientationEvent not detected");
+      }
+      DeviceOrientationEvent.requestPermission()
         .then((response) => {
           if (response === "granted") {
             window.addEventListener(
