@@ -120,7 +120,7 @@ function App() {
         navigator.userAgent.match(/AppleWebKit/)
       );
 
-      DeviceOrientationEvent.requestPermission()
+      window.DeviceOrientationEvent.requestPermission()
         .then((response) => {
           if (response === "granted") {
             window.addEventListener(
