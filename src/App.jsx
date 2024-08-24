@@ -25,6 +25,7 @@ import Sidebar from "./Sidebar.jsx";
 import cx from "classnames";
 import * as turf from "@turf/turf";
 import polyline from "@mapbox/polyline";
+import { AbsoluteOrientationSensor } from "./motion-sensors.js";
 import data from "./CATRoutes.json";
 import stopData from "./CATStops.json";
 import duplicates from "./combineStop.json";
@@ -215,14 +216,9 @@ function App() {
       if (geoLocCoord.lat) {
         //update marker coordinates and heading
         geoLocMarker.marker.setLngLat([geoLocCoord.lng, geoLocCoord.lat]);
+        //get the arrow and set angle
         geoLocMarker.marker.getElement().firstChild.children[1].style.transform =
           "rotate(" + heading + "deg) translateY(-13px)";
-        /*   rotateGeoLoc(
-          geoLocMarker.marker.getElement().firstChild.children[1],
-          heading,
-          geoLocMarker.prevAngle
-        );*/
-        setGeoLocMarker({ ...geoLocMarker, prevAngle: heading });
       }
     } else {
       //check coordinates are valid
@@ -236,7 +232,6 @@ function App() {
           center: [geoLocCoord.lng, geoLocCoord.lat],
           duration: 0,
         });
-        setGeoLocMarker({ marker: marker, prevAngle: heading });
       }
     }
   }, [geoLocCoord, heading]);
@@ -277,7 +272,22 @@ function App() {
             })
             .catch(() => alert("not supported"));
         } else {
-          window.addEventListener("deviceorientation", configureHeading, true);
+          const options = { frequency: 60, referenceFrame: "device" };
+          const sensor = new AbsoluteOrientationSensor(options);
+          sensor.addEventListener("reading", (e) => {
+            this.zone.run(() => {
+              var q = e.target.quaternion;
+              let alpha =
+                Math.atan2(
+                  2 * q[0] * q[1] + 2 * q[2] * q[3],
+                  1 - 2 * q[1] * q[1] - 2 * q[2] * q[2]
+                ) *
+                (180 / Math.PI);
+              if (alpha < 0) alpha = 360 + alpha;
+              setHeading(360 - alpha);
+            });
+          });
+          sensor.start();
         }
       }
     } else {

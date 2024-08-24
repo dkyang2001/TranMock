@@ -67,7 +67,6 @@
   position: absolute;
   border-bottom: 8px solid #0194c7;
   z-index: -1;
-  /* transition: transform 0.5s linear; */
 }
 /* marker section  */
 .marker {
