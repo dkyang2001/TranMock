@@ -114,28 +114,6 @@ function App() {
     if (localStorage.getItem("favorites")) {
       setFavorites(JSON.parse(localStorage.getItem("favorites")));
     }
-    /*
-    if (window.DeviceOrientationEvent) {
-      const isIOS = !(
-        navigator.userAgent.match(/(iPod|iPhone|iPad)/) &&
-        navigator.userAgent.match(/AppleWebKit/)
-      );
-      DeviceOrientationEvent.requestPermission()
-        .then((response) => {
-          if (response === "granted") {
-          } else {
-            alert("has to be allowed!");
-          }
-        })
-        .catch(() => alert("not supported"));
-      window.addEventListener(
-        "deviceorientation",
-        (e) => {
-          setHeading(e.webkitCompassHeading);
-        },
-        true
-      );
-    }*/
   }, []);
   //map stop click
   useEffect(() => {
@@ -217,6 +195,30 @@ function App() {
     const id = setInterval(() => {
       getUserLocation();
     }, 1000);
+
+    if (window.DeviceOrientationEvent) {
+      const isIOS = !(
+        navigator.userAgent.match(/(iPod|iPhone|iPad)/) &&
+        navigator.userAgent.match(/AppleWebKit/)
+      );
+      if (isIOS) {
+        DeviceOrientationEvent.requestPermission()
+          .then((response) => {
+            if (response === "granted") {
+              window.addEventListener(
+                "deviceorientation",
+                (e) => {
+                  setHeading(e.webkitCompassHeading);
+                },
+                true
+              );
+            } else {
+              alert("has to be allowed!");
+            }
+          })
+          .catch(() => alert("not supported"));
+      }
+    }
     return () => {
       clearInterval(id);
       if (geoLocMarker.marker) {
