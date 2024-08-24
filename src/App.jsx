@@ -202,9 +202,11 @@ function App() {
         navigator.userAgent.match(/AppleWebKit/)
       );
       if (isIOS) {
+        alert("ios");
         DeviceOrientationEvent.requestPermission()
           .then((response) => {
             if (response === "granted") {
+              alert("granted");
               window.addEventListener(
                 "deviceorientation",
                 (e) => {
@@ -217,6 +219,8 @@ function App() {
             }
           })
           .catch(() => alert("not supported"));
+      } else {
+        console.log("nope");
       }
     }
     return () => {
