@@ -215,11 +215,13 @@ function App() {
       if (geoLocCoord.lat) {
         //update marker coordinates and heading
         geoLocMarker.marker.setLngLat([geoLocCoord.lng, geoLocCoord.lat]);
-        rotateGeoLoc(
+        geoLocMarker.marker.getElement().firstChild.children[1].style.transform =
+          "rotate(" + heading + "deg) translateY(-13px)";
+        /*   rotateGeoLoc(
           geoLocMarker.marker.getElement().firstChild.children[1],
           heading,
           geoLocMarker.prevAngle
-        );
+        );*/
         setGeoLocMarker({ ...geoLocMarker, prevAngle: heading });
       }
     } else {
@@ -263,11 +265,9 @@ function App() {
           );
         })();
         if (isIOS) {
-          window.alert("ios");
           DeviceOrientationEvent.requestPermission()
             .then((response) => {
               if (response === "granted") {
-                window.alert("granted");
                 window.addEventListener(
                   "deviceorientation",
                   configureHeading,
