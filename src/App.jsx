@@ -196,47 +196,6 @@ function App() {
       getUserLocation();
     }, 1000);
 
-    if (window.DeviceOrientationEvent) {
-      var isIOS = (function () {
-        var iosQuirkPresent = function () {
-          var audio = new Audio();
-
-          audio.volume = 0.5;
-          return audio.volume === 1; // volume cannot be changed from "1" on iOS 12 and below
-        };
-
-        var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-        var isAppleDevice = navigator.userAgent.includes("Macintosh");
-        var isTouchScreen = navigator.maxTouchPoints >= 1; // true for iOS 13 (and hopefully beyond)
-
-        return isIOS || (isAppleDevice && (isTouchScreen || iosQuirkPresent()));
-      })();
-      if (isIOS) {
-        window.alert("ios");
-        if (typeof DeviceOrientationEvent.requestPermission === "function") {
-          DeviceOrientationEvent.requestPermission()
-            .then((response) => {
-              if (response === "granted") {
-                window.alert("granted");
-                window.addEventListener(
-                  "deviceorientation",
-                  (e) => {
-                    setHeading(e.webkitCompassHeading);
-                  },
-                  true
-                );
-              } else {
-                window.alert("has to be allowed!");
-              }
-            })
-            .catch(() => alert("not supported"));
-        } else {
-          window.alert("no function");
-        }
-      } else {
-        window.alert("nope");
-      }
-    }
     return () => {
       clearInterval(id);
       if (geoLocMarker.marker) {
@@ -244,6 +203,7 @@ function App() {
         setGeoLocMarker({ marker: null });
         setGeoLocCoord({});
       }
+      window.removeEventListener("deviceorientation", configureHeading);
     };
   }, [geoLocSetting]);
   useEffect(() => {
@@ -285,10 +245,48 @@ function App() {
       }
     }
   }, [geoLocCoord, heading]);
+  function configureHeading(e) {
+    setHeading(e.webkitCompassHeading);
+  }
   //enable geoLocation tracking
   function enableGeo() {
     if (!geoLocSetting) {
       setGeoLocSetting(true);
+      if (window.DeviceOrientationEvent) {
+        var isIOS = (function () {
+          var iosQuirkPresent = function () {
+            var audio = new Audio();
+
+            audio.volume = 0.5;
+            return audio.volume === 1; // volume cannot be changed from "1" on iOS 12 and below
+          };
+
+          var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+          var isAppleDevice = navigator.userAgent.includes("Macintosh");
+          var isTouchScreen = navigator.maxTouchPoints >= 1; // true for iOS 13 (and hopefully beyond)
+
+          return (
+            isIOS || (isAppleDevice && (isTouchScreen || iosQuirkPresent()))
+          );
+        })();
+        if (isIOS) {
+          window.alert("ios");
+          DeviceOrientationEvent.requestPermission()
+            .then((response) => {
+              if (response === "granted") {
+                window.alert("granted");
+                window.addEventListener(
+                  "deviceorientation",
+                  configureHeading,
+                  true
+                );
+              }
+            })
+            .catch(() => alert("not supported"));
+        } else {
+          window.alert("nope");
+        }
+      }
     } else {
       //check if coord are valid
       if (geoLocCoord.lng) {
