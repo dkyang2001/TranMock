@@ -191,13 +191,13 @@ function App() {
         console.error("Geolocation is not supported by this browser.");
       }
     };
-    getUserLocation();
+    getUserLocation(); /*
     const id = setInterval(() => {
       getUserLocation();
-    }, 1000);
+    }, 10000);*/
 
     return () => {
-      clearInterval(id);
+      //    clearInterval(id);
       if (geoLocMarker.marker) {
         geoLocMarker.marker.remove();
         setGeoLocMarker({ marker: null });
