@@ -114,6 +114,7 @@ function App() {
     if (localStorage.getItem("favorites")) {
       setFavorites(JSON.parse(localStorage.getItem("favorites")));
     }
+    /*
     if (window.DeviceOrientationEvent) {
       const isIOS = !(
         navigator.userAgent.match(/(iPod|iPhone|iPad)/) &&
@@ -134,7 +135,7 @@ function App() {
         },
         true
       );
-    }
+    }*/
   }, []);
   //map stop click
   useEffect(() => {
@@ -191,7 +192,7 @@ function App() {
       if (navigator.geolocation) {
         function success(position) {
           // get geolocation positions
-          let { latitude, longitude, heading } = position.coords;
+          let { latitude, longitude } = position.coords;
           setGeoLocCoord({
             lng: longitude,
             lat: latitude,
@@ -920,7 +921,10 @@ function App() {
                controlled by forPopUp below
           */
           if (!bus.forPopUp) {
-            marker = new maplibregl.Marker({ element: el })
+            marker = new maplibregl.Marker({
+              element: el,
+              rotationAlignment: "map",
+            })
               .setLngLat([bus.location.lng, bus.location.lat])
               .addTo(map.current);
           } else {
