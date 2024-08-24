@@ -9,27 +9,13 @@ export function createGeoLocElement(angle) {
   circleShadow.className = styles.circleShadow;
   const arrow_up = document.createElement("div");
   arrow_up.className = styles.arrow_up;
-  arrow_up.style.transform = "rotate(" + angle + "deg) translateY(-13px)";
+  //if angle is null,hide the arrow element inside
+  if (angle) {
+    arrow_up.style.transform = "rotate(" + angle + "deg) translateY(-13px)";
+  }
   circle.append(circleShadow, arrow_up);
   container.append(circle);
   return container;
-}
-export function rotateGeoLoc(element, nR, prevR) {
-  var aR;
-  prevR = prevR || 0; // if rot undefined or 0, make 0, else rot
-  aR = prevR % 360;
-  if (aR < 0) {
-    aR += 360;
-  }
-  if (aR < 180 && nR > aR + 180) {
-    prevR -= 360;
-  }
-  if (aR >= 180 && nR <= aR - 180) {
-    prevR += 360;
-  }
-  prevR += nR - aR;
-  element.style.transform = "rotate(" + prevR + "deg) translateY(-13px)";
-  return prevR;
 }
 export function createBusElement(color, angle) {
   const container = document.createElement("div");
