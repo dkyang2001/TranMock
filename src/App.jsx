@@ -115,12 +115,29 @@ function App() {
       setFavorites(JSON.parse(localStorage.getItem("favorites")));
     }
     if (window.DeviceOrientationEvent) {
-      // Listen for the deviceorientation event and handle the raw data
-      window.addEventListener("deviceorientation", function (event) {
-        if (event.webkitCompassHeading) {
-          setHeading(event.webkitCompassHeading);
-        }
-      });
+      const isIOS = !(
+        navigator.userAgent.match(/(iPod|iPhone|iPad)/) &&
+        navigator.userAgent.match(/AppleWebKit/)
+      );
+      if (isIOS) {
+        DeviceOrientationEvent.requestPermission()
+          .then((response) => {
+            if (response === "granted") {
+              window.addEventListener(
+                "deviceorientation",
+                (e) => {
+                  setHeading(e.webkitCompassHeading);
+                },
+                true
+              );
+            } else {
+              alert("has to be allowed!");
+            }
+          })
+          .catch(() => alert("not supported"));
+      } else {
+        window.addEventListener("deviceorientationabsolute", () => {}, true);
+      }
     }
   }, []);
   //map stop click
