@@ -208,32 +208,25 @@ function App() {
   }, [geoLocSetting]);
   useEffect(() => {
     if (!geoLocSetting) return;
-    //convert heading variable to correct angle on screen
-    let toCorrectAngle = (angle) => (angle + 180) % 360;
+
     //check geoloc Marker already exists
     if (geoLocMarker.marker) {
       //check coordinates are valid
       if (geoLocCoord.lat) {
-        //filter out invalid heading to prev angle
-        const angle = !heading
-          ? geoLocMarker.prevAngle
-          : toCorrectAngle(heading);
         //update marker coordinates and heading
         geoLocMarker.marker.setLngLat([geoLocCoord.lng, geoLocCoord.lat]);
         rotateGeoLoc(
           geoLocMarker.marker.getElement().firstChild.children[1],
-          angle,
+          heading,
           geoLocMarker.prevAngle
         );
-        setGeoLocMarker({ ...geoLocMarker, prevAngle: angle });
+        setGeoLocMarker({ ...geoLocMarker, prevAngle: heading });
       }
     } else {
       //check coordinates are valid
       if (geoLocCoord.lat) {
-        //filter out invalid heading to 0 degree
-        const angle = !heading ? 0 : toCorrectAngle(heading);
         //create user marker and set map center
-        const el = createGeoLocElement(angle);
+        const el = createGeoLocElement(heading);
         const marker = new maplibregl.Marker({ element: el })
           .setLngLat([geoLocCoord.lng, geoLocCoord.lat])
           .addTo(map.current);
@@ -241,7 +234,7 @@ function App() {
           center: [geoLocCoord.lng, geoLocCoord.lat],
           duration: 0,
         });
-        setGeoLocMarker({ marker: marker, prevAngle: angle });
+        setGeoLocMarker({ marker: marker, prevAngle: heading });
       }
     }
   }, [geoLocCoord, heading]);
