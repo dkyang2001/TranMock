@@ -197,7 +197,6 @@ function App() {
     }, 1000);
 
     if (window.DeviceOrientationEvent) {
-      window.alert("event");
       const isIOS = !(
         navigator.userAgent.match(/(iPod|iPhone|iPad)/) &&
         navigator.userAgent.match(/AppleWebKit/)
@@ -221,7 +220,7 @@ function App() {
           })
           .catch(() => alert("not supported"));
       } else {
-        console.log("nope");
+        window.alert("nope");
       }
     }
     return () => {
