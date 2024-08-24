@@ -284,7 +284,7 @@ function App() {
             })
             .catch(() => alert("not supported"));
         } else {
-          window.alert("nope");
+          window.addEventListener("deviceorientation", configureHeading, true);
         }
       }
     } else {
@@ -1468,7 +1468,6 @@ function App() {
           }
           routes={filterRoutes()}
           geoLocOn={geoLocSetting}
-          heading={heading}
           distance={sidebarSetting.state === 1 ? sidebarSetting.distance : null}
           functions={{
             toggleActive: toggleActive,
