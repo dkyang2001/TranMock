@@ -213,22 +213,26 @@ function App() {
       })();
       if (isIOS) {
         window.alert("ios");
-        DeviceOrientationEvent.requestPermission()
-          .then((response) => {
-            if (response === "granted") {
-              window.alert("granted");
-              window.addEventListener(
-                "deviceorientation",
-                (e) => {
-                  setHeading(e.webkitCompassHeading);
-                },
-                true
-              );
-            } else {
-              window.alert("has to be allowed!");
-            }
-          })
-          .catch(() => alert("not supported"));
+        if (typeof DeviceMotionEvent.requestPermission === "function") {
+          DeviceOrientationEvent.requestPermission()
+            .then((response) => {
+              if (response === "granted") {
+                window.alert("granted");
+                window.addEventListener(
+                  "deviceorientation",
+                  (e) => {
+                    setHeading(e.webkitCompassHeading);
+                  },
+                  true
+                );
+              } else {
+                window.alert("has to be allowed!");
+              }
+            })
+            .catch(() => alert("not supported"));
+        } else {
+          window.alert("no function");
+        }
       } else {
         window.alert("nope");
       }
