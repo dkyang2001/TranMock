@@ -25,7 +25,6 @@ import Sidebar from "./Sidebar.jsx";
 import cx from "classnames";
 import * as turf from "@turf/turf";
 import polyline from "@mapbox/polyline";
-import { AbsoluteOrientationSensor } from "./motion-sensors.js";
 import data from "./CATRoutes.json";
 import stopData from "./CATStops.json";
 import duplicates from "./combineStop.json";
@@ -236,7 +235,7 @@ function App() {
     }
   }, [geoLocCoord, heading]);
   function configureHeading(e) {
-    setHeading(e.webkitCompassHeading);
+    setHeading(e.webkitCompassHeading || Math.abs(e.alpha - 360));
   }
   //enable geoLocation tracking
   function enableGeo() {
@@ -272,22 +271,11 @@ function App() {
             })
             .catch(() => alert("not supported"));
         } else {
-          const options = { frequency: 60, referenceFrame: "device" };
-          const sensor = new AbsoluteOrientationSensor(options);
-          sensor.addEventListener("reading", (e) => {
-            this.zone.run(() => {
-              var q = e.target.quaternion;
-              let alpha =
-                Math.atan2(
-                  2 * q[0] * q[1] + 2 * q[2] * q[3],
-                  1 - 2 * q[1] * q[1] - 2 * q[2] * q[2]
-                ) *
-                (180 / Math.PI);
-              if (alpha < 0) alpha = 360 + alpha;
-              setHeading(360 - alpha);
-            });
-          });
-          sensor.start();
+          window.addEventListener(
+            "deviceorientationabsolute",
+            configureHeading,
+            true
+          );
         }
       }
     } else {
