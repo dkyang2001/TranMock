@@ -179,11 +179,7 @@ function App() {
         console.error("Error getting user location:", error);
       }
       // get the current users location
-      id = navigator.geolocation.watchPosition(success, error, {
-        maximumAge: 0,
-        timeout: 10000,
-        enableHighAccuracy: true,
-      });
+      id = navigator.geolocation.watchPosition(success, error);
     }
     // if geolocation is not supported by the users browser
     else {
