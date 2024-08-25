@@ -24,7 +24,7 @@ const Sidebar = forwardRef(function Sidebar(
     open,
     distance,
     favorite,
-    geoLocOn,
+    geoLocState,
     functions,
   },
   Sidebar
@@ -78,7 +78,10 @@ const Sidebar = forwardRef(function Sidebar(
     <div className={styles.sidebar}>
       {state !== 4 && (
         <div
-          className={styles.geoLocate}
+          className={cx(
+            styles.geoLocate,
+            geoLocState === 1 ? styles.loading : null
+          )}
           onClick={() => setClick((prev) => prev + 1)}
         >
           <svg
@@ -90,13 +93,13 @@ const Sidebar = forwardRef(function Sidebar(
           >
             <path
               d="M12 20C16.4183 20 20 16.4183 20 12M12 20C7.58172 20 4 16.4183 4 12M12 20V22M20 12C20 7.58172 16.4183 4 12 4M20 12H22M12 4C7.58172 4 4 7.58172 4 12M12 4V2M4 12H2"
-              stroke={!geoLocOn ? "gray" : "#0194c7"}
+              stroke={geoLocState !== 2 ? "gray" : "#0194c7"}
               strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
             />
             <circle
-              fill={!geoLocOn ? "gray" : "#0194c7"}
+              fill={geoLocState !== 2 ? "gray" : "#0194c7"}
               cx="12"
               cy="12"
               r="4"

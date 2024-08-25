@@ -132,6 +132,7 @@ function App() {
         });
         if (
           selectedFeatures &&
+          selectedFeatures.length > 0 &&
           selectedFeatures[0].layer.paint["circle-opacity"] === 1
         ) {
           map.current.flyTo({
@@ -179,8 +180,8 @@ function App() {
       }
       // get the current users location
       id = navigator.geolocation.watchPosition(success, error, {
-        maximumAge: 60000,
-        timeout: 100,
+        maximumAge: 0,
+        timeout: 10000,
         enableHighAccuracy: true,
       });
     }
@@ -1166,6 +1167,33 @@ function App() {
       }
       return String(id);
     }
+    //get closest stop using distance
+    function getClosestStop(route_id) {
+      console.log("here");
+      let stops;
+      allRoutes.some((route) => {
+        if (route.route_id === route_id) {
+          stops = route.stops;
+          return true;
+        }
+      });
+      let minStopID = String(stops[0]);
+      let minDistance = Infinity;
+      const currentLoc = [geoLocCoord.lng, geoLocCoord.lat];
+      stops.map((stopID) => {
+        const translocID = duplicates[String(stopID)];
+        const correctID = translocID ? translocID : String(stopID);
+        const stopInfo = busStops.get(String(correctID));
+        const travelLine = turf.lineString([currentLoc, stopInfo.coordinates]);
+        const distance = Number(turf.length(travelLine, { units: "miles" }));
+        if (distance < minDistance) {
+          console.log("change");
+          minDistance = distance;
+          minStopID = correctID;
+        }
+      });
+      return minStopID;
+    }
     let routeInfo = null;
     //retrieve route info
     allRoutes.map((route, i) => {
@@ -1178,9 +1206,11 @@ function App() {
     });
     //get a stop if there is no stopId prepared
     const stopID =
-      sidebarSetting.stopID === null
-        ? getFirstStop(route_id)
-        : sidebarSetting.stopID;
+      sidebarSetting.stopID !== null
+        ? sidebarSetting.stopID
+        : geoLocSetting && geoLocCoord.lat
+        ? getClosestStop(route_id)
+        : getFirstStop(route_id);
     const coordinates = busStops.get(stopID).coordinates;
     //create stop marker for popUp and store for later deletion
     const marker = createBusStopMarker(coordinates);
@@ -1486,7 +1516,7 @@ function App() {
               : null
           }
           routes={filterRoutes()}
-          geoLocOn={geoLocSetting}
+          geoLocState={!geoLocSetting ? 0 : !geoLocCoord.lat ? 1 : 2}
           distance={sidebarSetting.state === 1 ? sidebarSetting.distance : null}
           functions={{
             toggleActive: toggleActive,

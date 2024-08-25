@@ -22,6 +22,14 @@
   justify-content: center;
   align-items: center;
 }
+.geoLocate.loading {
+  animation: spin 2s linear infinite;
+}
+@keyframes spin {
+  100% {
+    transform: translateY(-110%) rotate(360deg);
+  }
+}
 .holdIcon {
   position: absolute;
   width: 80px;
