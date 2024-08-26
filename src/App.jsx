@@ -28,6 +28,7 @@ import Sidebar from "./Sidebar.jsx";
 import cx from "classnames";
 import * as turf from "@turf/turf";
 import duplicates from "./combineStop.json";
+import something from "./something.json";
 function App() {
   /*********************   State/Ref Declaration *********************************/
   //viewport state
@@ -113,6 +114,15 @@ function App() {
     if (localStorage.getItem("favorites")) {
       setFavorites(JSON.parse(localStorage.getItem("favorites")));
     }
+    const a = new Map();
+    something.get_schedules.map((schedule) => {
+      if (a.has(String(schedule.corridorID))) {
+        a.get(String(schedule.corridorID)).push(schedule);
+      } else {
+        a.set(String(schedule.corridorID), [schedule]);
+      }
+    });
+    console.log(a);
   }, []);
   //map stop click
   useEffect(() => {
@@ -881,7 +891,7 @@ function App() {
     arrivalUpdate();
     const arrivalInterval = setInterval(() => {
       arrivalUpdate();
-    }, 30000);
+    }, 20000);
 
     return () => {
       clearInterval(busInterval);
