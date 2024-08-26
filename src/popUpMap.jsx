@@ -11,7 +11,17 @@ import cx from "classnames";
 import styles from "./popUpMap.module.css";
 import Sidebar from "./Sidebar";
 const PopUpMap = forwardRef(function PopUpMap(
-  { active, routeInfo, busArray, stop, arrival, haveStop, favorite, functions },
+  {
+    active,
+    routeInfo,
+    busArray,
+    stop,
+    arrival,
+    haveStop,
+    isFavorite,
+    currLoc,
+    functions,
+  },
   popUpMap
 ) {
   //viewport state
@@ -341,7 +351,8 @@ const PopUpMap = forwardRef(function PopUpMap(
           stop={stop}
           arrival={processArrival(arrival)}
           color={routeInfo.color}
-          favorite={favorite}
+          isFavorite={isFavorite}
+          currLoc={currLoc}
           functions={{
             touchStart: touchStart,
             touchMove: touchMove,

@@ -11,6 +11,10 @@ import {
   getCATBuses,
   getStops,
   getArrivalEstimates,
+  getCATArrivals,
+  getCATRoutes,
+  getCATStops,
+  getCATRouteSegments,
 } from "./ApiFunctions.js";
 import {
   createGeoLocElement,
@@ -23,9 +27,6 @@ import PopUpMap from "./popUpMap.jsx";
 import Sidebar from "./Sidebar.jsx";
 import cx from "classnames";
 import * as turf from "@turf/turf";
-import polyline from "@mapbox/polyline";
-import data from "./CATRoutes.json";
-import stopData from "./CATStops.json";
 import duplicates from "./combineStop.json";
 function App() {
   /*********************   State/Ref Declaration *********************************/
@@ -74,7 +75,6 @@ function App() {
   const popUpMap = useRef(null);
   const sidebar = useRef(null);
   /*****************************************************************************/
-
   /********************** Map Initiator ****************************************/
   //create map on first render
   useEffect(() => {
@@ -383,185 +383,167 @@ function App() {
       });
       return result;
     }
+    function getBounds(routeCoordinates) {
+      //shorten by half for faster bound calculation
+      routeCoordinates = routeCoordinates.filter(
+        (route, index) => index % 2 === 0
+      );
+      //calculate the bounds of the specific route
+      return routeCoordinates.reduce(function (bounds, coord) {
+        return bounds.extend(coord);
+      }, new maplibregl.LngLatBounds(routeCoordinates[0], routeCoordinates[0]));
+    }
     //grab routes and segments from api at the same time
-    Promise.all([getRoutes(agencyList), getAllSegments(agencyList)]).then(
-      (results) => {
-        const routes = results[0];
-        const segmentMap = results[1];
-        if (routes && routes.length > 0) {
-          //for storing routes
-          const translocRouteList = [];
-          //for creating default setting
-          const routeConfig = new Map();
-          //get lists that doesn't have segments
-          const failedRouteList = [];
-          let num = 0; //for setting active on routes
-          //limit set for active routes:8 including favorited routes
-          const limit = 8 - Object.keys(favorites).length;
-          routes.map((route) => {
-            if (route.is_active) {
-              if (route.segments !== null && route.segments.length > 0) {
-                let routeCoordinates = []; //for calculating bounds
-                const routeSegments = route.segments.map((segment) => {
-                  //grab segment in feature object from map
-                  const decodedSegment = segmentMap[segment[0]];
-                  //add coordinates from feature
-                  routeCoordinates.push(...decodedSegment.geometry.coordinates);
-                  //add more info about the route within the map feature for drawing
-                  return {
-                    ...decodedSegment,
-                    properties: {
-                      color: "#" + route.color,
-                      routes: [route.route_id],
-                    },
-                  };
+    Promise.all([
+      getRoutes(agencyList),
+      getAllSegments(agencyList),
+      getCATRoutes(),
+      getCATRouteSegments(),
+    ]).then((results) => {
+      const routes = results[0];
+      const segmentMap = results[1];
+      if (routes && routes.length > 0) {
+        /*************TRANSLOC SECTION***************** */
+        //for storing routes
+        const translocRouteList = [];
+        //for creating default setting
+        const routeConfig = new Map();
+        //get lists that doesn't have segments
+        const failedRouteList = [];
+        let num = 0; //for setting active on routes
+        //limit set for active routes:8 including favorited routes
+        const limit = 8 - Object.keys(favorites).length;
+        routes.map((route) => {
+          if (route.is_active) {
+            if (route.segments !== null && route.segments.length > 0) {
+              let routeCoordinates = []; //for calculating bounds
+              const routeSegments = route.segments.map((segment) => {
+                //grab segment in feature object from map
+                const decodedSegment = segmentMap[segment[0]];
+                //add coordinates from feature
+                routeCoordinates.push(...decodedSegment.geometry.coordinates);
+                //add more info about the route within the map feature for drawing
+                return {
+                  ...decodedSegment,
+                  properties: {
+                    color: "#" + route.color,
+                    routes: [route.route_id],
+                  },
+                };
+              });
+              //calculate route bounds
+              const bounds = getBounds(routeCoordinates);
+              //place processed route for storage
+              translocRouteList.push({
+                ...route,
+                color: "#" + route.color,
+                segmentFeature: routeSegments,
+                agencyName: getAgencyName(route.agency_id),
+                bounds: bounds,
+              });
+              routeConfig.set(route.route_id, {
+                route_id: route.route_id,
+                active: favorites[route.route_id] || num < limit, //set Active on routes
+                popUp: false, //no routes are on popUp yet
+              });
+              //don't increase count if it was not in favorites
+              if (!favorites[route.route_id]) {
+                num++;
+              }
+            } else {
+              failedRouteList.push(route); //for routes from api that didn't have segments data
+            }
+          }
+        });
+        //for transloc failed routes, try to get segments from segments api
+        //after specifying the route this time
+        if (failedRouteList.length > 0) {
+          Promise.all(
+            failedRouteList.map((route) => getRouteSegments(agencyList, route))
+          ).then((result) => {
+            failedRouteList.map((route, index) => {
+              const routeSegments = result[index];
+              if (routeSegments) {
+                //for succesful fetches
+                let routeCoordinates = [];
+                //grab all coordinates for route and filter them out
+                routeSegments.map((segment) => {
+                  routeCoordinates.push(...segment.geometry.coordinates);
                 });
-                //shorten by half for faster bound calculation
-                routeCoordinates = routeCoordinates.filter(
-                  (route, index) => index % 2 === 0
-                );
-                //calculate the bounds of the specific route
-                let bounds = routeCoordinates.reduce(function (bounds, coord) {
-                  return bounds.extend(coord);
-                }, new maplibregl.LngLatBounds(
-                  routeCoordinates[0],
-                  routeCoordinates[0]
-                ));
+                //calculate route bounds
+                const bounds = getBounds(routeCoordinates);
                 //place processed route for storage
                 translocRouteList.push({
                   ...route,
                   color: "#" + route.color,
                   segmentFeature: routeSegments,
-                  from: "transloc",
                   agencyName: getAgencyName(route.agency_id),
                   bounds: bounds,
                 });
                 routeConfig.set(route.route_id, {
                   route_id: route.route_id,
                   active: favorites[route.route_id] || num < limit, //set Active on routes
-                  popUp: false, //no routes are on popUp yet
+                  popUp: false,
                 });
-                //don't increase count if it was not in favorites
+                //don't increase number if it was not in favorites
                 if (!favorites[route.route_id]) {
                   num++;
                 }
-              } else {
-                failedRouteList.push(route); //for routes from api that didn't have segments data
               }
-            }
+            });
           });
-          //for failed routes, try to get segments from segments api
-          //after specifying the route this time
-          if (failedRouteList.length > 0) {
-            Promise.all(
-              failedRouteList.map((route) =>
-                getRouteSegments(agencyList, route)
-              )
-            ).then((result) => {
-              failedRouteList.map((route, index) => {
-                const routeSegments = result[index];
-                if (routeSegments) {
-                  //for succesful fetches
-                  let routeCoordinates = [];
-                  //grab all coordinates for route and filter them out
-                  routeSegments.map((segment) => {
-                    routeCoordinates.push(segment.geometry.coordinates);
-                  });
-                  routeCoordinates = routeCoordinates.filter(
-                    (route, index) => index % 2 === 0
-                  );
-                  //calculate the bounds of the specific route
-                  let bounds = routeCoordinates.reduce(function (
-                    bounds,
-                    coord
-                  ) {
-                    return bounds.extend(coord);
-                  },
-                  new maplibregl.LngLatBounds(routeCoordinates[0], routeCoordinates[0]));
-                  //place processed route for storage
-                  translocRouteList.push({
-                    ...route,
-                    color: "#" + route.color,
-                    from: "transloc",
-                    segmentFeature: routeSegments,
-                    agencyName: getAgencyName(route.agency_id),
-                    bounds: bounds,
-                  });
-                  routeConfig.set(route.route_id, {
-                    route_id: route.route_id,
-                    active: favorites[route.route_id] || num < limit, //set Active on routes
-                    popUp: false,
-                  });
-                  //don't increase number if it was not in favorites
-                  if (!favorites[route.route_id]) {
-                    num++;
-                  }
-                }
-              });
-            });
-          }
-          const catRouteList = [];
-          //save the CAT routes
-          data.get_routes.map((route) => {
-            let segment = route.encLine;
-            const coordinateList = polyline
-              .decode(segment)
-              .map((coordinate) => [coordinate[1], coordinate[0]]);
-            //filter coordinate list for faster compute of bound
-            const routeCoordinates = coordinateList.filter(
-              (route, index) => index % 2 === 0
-            );
-            //calculate the bounds of the specific route
-            let bounds = routeCoordinates.reduce(function (bounds, coord) {
-              return bounds.extend(coord);
-            }, new maplibregl.LngLatBounds(
-              routeCoordinates[0],
-              routeCoordinates[0]
-            ));
-            catRouteList.push({
-              ...route,
-              route_id: String(route.id),
-              from: "cat",
-              long_name: route.name,
-              short_name: route.name,
-              bounds: bounds,
-              agencyName: "Charlottesville Area Transit",
-              segmentFeature: [
-                {
-                  type: "Feature",
-                  geometry: { type: "LineString", coordinates: coordinateList },
-                  properties: {
-                    color: route.color,
-                    routes: [String(route.id)],
-                  },
-                },
-              ],
-            });
-            routeConfig.set(String(route.id), {
-              route_id: String(route.id),
-              active: favorites[route.id] || num < limit, //set Active on routes
-              popUp: false,
-            });
-            //don't increase count if it was not in favorites
-            if (!favorites[route.id]) {
-              num++;
-            }
-          });
-          //save all route data in state
-          setRouteList({ transloc: translocRouteList, cat: catRouteList });
-          //save route settings in state
-          setRouteSetting({ routes: routeConfig });
-          //place layer in map
-          configureRouteLayer(translocRouteList.concat(catRouteList));
-          //open sidebar
-          setSidebarPosition({ active: true });
         }
+        /************************************************/
+        /******************CAT SECTION*******************/
+        const catRoutes = results[2];
+        const catSegments = results[3];
+        const catRouteList = [];
+        //save the CAT routes
+        catRoutes.map((route) => {
+          const routeID = String(route.id);
+          const routeSegments = catSegments[routeID];
+          const routeCoordinates = [];
+          routeSegments.map((segment) => {
+            routeCoordinates.push(...segment.geometry.coordinates);
+          });
+          //calculate route bounds
+          const bounds = getBounds(routeCoordinates);
+          catRouteList.push({
+            ...route,
+            route_id: routeID,
+            long_name: route.name,
+            short_name: route.name,
+            bounds: bounds,
+            agencyName: "Charlottesville Area Transit",
+            segmentFeature: routeSegments,
+          });
+          routeConfig.set(routeID, {
+            route_id: routeID,
+            active: favorites[routeID] || num < limit, //set Active on routes
+            popUp: false,
+          });
+          //don't increase count if it was not in favorites
+          if (!favorites[routeID]) {
+            num++;
+          }
+        });
+        /*******************************************/
+        //save all route data in state
+        setRouteList({ transloc: translocRouteList, cat: catRouteList });
+        //save route settings in state
+        setRouteSetting({ routes: routeConfig });
+        //place layer in map
+        configureRouteLayer(translocRouteList.concat(catRouteList));
+        //open sidebar
+        setSidebarPosition({ active: true });
       }
-    );
+    });
   }
   function configureStops() {
     //fetch stops
-    getStops(agencyList).then((stops) => {
+    Promise.all([getStops(agencyList), getCATStops()]).then((results) => {
+      /*****************TRANSLOC SECTION*********************/
+      const stops = results[0];
       let stopMap = new Map();
       //turn list into maplibre features
       stops.map((stop) => {
@@ -573,25 +555,24 @@ function App() {
           coordinates: [stop.location.lng, stop.location.lat],
         });
       });
+      /*******************CAT SECTION**********************/
       //push CAT stops into them and combine stops with transloc if needed
-      Object.keys(stopData).forEach((stopID) => {
-        const stop = stopData[stopID];
-        const translocID = duplicates[stopID];
-        if (translocID) {
-          if (stopMap.has(translocID)) {
-            stopMap.get(translocID).routes.push(...stop.routes);
-            stopMap.get(translocID).name = stop.name;
-          }
+      const CATStops = results[1];
+      CATStops.map((CATStop) => {
+        const stopID = duplicates[CATStop.extID]
+          ? duplicates[CATStop.extID]
+          : CATStop.extID;
+        if (stopMap.has(stopID)) {
+          stopMap.get(stopID).routes.push(String(CATStop.rid));
         } else {
-          stopMap.set(stop.extID, {
-            name: stop.name,
-            routes: stop.routes,
-            stop_id: stop.extID,
-            coordinates: [stop.lng, stop.lat],
+          stopMap.set(stopID, {
+            name: CATStop.name,
+            routes: [String(CATStop.rid)],
+            stop_id: stopID,
+            coordinates: [CATStop.lng, CATStop.lat],
           });
         }
       });
-
       //push the stops into features
       const stopFeatureList = [];
       stopMap.forEach((stop, stopID) => {
@@ -818,16 +799,17 @@ function App() {
       });
       result[1].map((bus) => {
         if (bus.inService === 1) {
+          const routeID = String(bus.routeID);
           const toStore = {
             heading: bus.h,
             vehicle_id: String(bus.trainID),
             location: { lat: bus.lat, lng: bus.lng },
             color: bus.color,
           };
-          if (!busMap.has(String(bus.routeID))) {
-            busMap.set(String(bus.routeID), [toStore]);
+          if (!busMap.has(routeID)) {
+            busMap.set(routeID, [toStore]);
           } else {
-            busMap.get(String(bus.routeID)).push(toStore);
+            busMap.get(routeID).push(toStore);
           }
         }
       });
@@ -835,22 +817,46 @@ function App() {
     }
     //converting fetched arrival array into map and process data within
     function arrivalUpdate() {
-      getArrivalEstimates(agencyList).then((arrivals) => {
-        const arrivalMap = new Map();
-        arrivals.map((arrival) => {
-          arrival.arrivals = arrival.arrivals.map((item) => {
-            return {
-              ...item,
-              remaining: Math.floor(
-                //calculate remaining time
-                (new Date(item.arrival_at) - new Date()) / 60000
-              ),
-            };
+      Promise.all([getArrivalEstimates(agencyList), getCATArrivals()]).then(
+        (results) => {
+          const arrivals = results[0];
+          const arrivalMap = new Map();
+          arrivals.map((arrival) => {
+            arrival.arrivals = arrival.arrivals.map((item) => {
+              return {
+                ...item,
+                remaining: Math.floor(
+                  //calculate remaining time
+                  (new Date(item.arrival_at) - new Date()) / 60000
+                ),
+              };
+            });
+            arrivalMap.set(arrival.stop_id, arrival);
           });
-          arrivalMap.set(arrival.stop_id, arrival);
-        });
-        setArrivals(arrivalMap);
-      });
+          const catArrivals = results[1];
+          catArrivals.map((vehicle) => {
+            const vehicleID = String(vehicle.trainID);
+            vehicle.minutesToNextStops.map((arrival) => {
+              let stopID = String(arrival.stopID);
+              stopID = duplicates[stopID] ? duplicates[stopID] : stopID;
+              const arrivalItem = {
+                route_id: String(arrival.routeID),
+                vehicle_id: vehicleID,
+                remaining: arrival.minutes,
+              };
+              if (arrivalMap.has(stopID)) {
+                arrivalMap.get(stopID).arrivals.push(arrivalItem);
+              } else {
+                arrivalMap.set(stopID, {
+                  stop_id: stopID,
+                  arrivals: [arrivalItem],
+                });
+              }
+            });
+          });
+          setArrivals(arrivalMap);
+        }
+      );
     }
     if (Object.keys(routeList).length === 0) return;
     routeFilter();
@@ -1154,18 +1160,17 @@ function App() {
       let id;
       allRoutes.some((route) => {
         if (route.route_id === route_id) {
-          id = route.stops[0];
+          id = String(route.stops[0]);
           return true;
         }
       });
       if (duplicates[id]) {
         id = duplicates[id];
       }
-      return String(id);
+      return id;
     }
     //get closest stop using distance
     function getClosestStop(route_id) {
-      console.log("here");
       let stops;
       allRoutes.some((route) => {
         if (route.route_id === route_id) {
@@ -1177,13 +1182,13 @@ function App() {
       let minDistance = Infinity;
       const currentLoc = [geoLocCoord.lng, geoLocCoord.lat];
       stops.map((stopID) => {
-        const translocID = duplicates[String(stopID)];
-        const correctID = translocID ? translocID : String(stopID);
-        const stopInfo = busStops.get(String(correctID));
+        stopID = String(stopID);
+        const translocID = duplicates[stopID];
+        const correctID = translocID ? translocID : stopID;
+        const stopInfo = busStops.get(correctID);
         const travelLine = turf.lineString([currentLoc, stopInfo.coordinates]);
         const distance = Number(turf.length(travelLine, { units: "miles" }));
         if (distance < minDistance) {
-          console.log("change");
           minDistance = distance;
           minStopID = correctID;
         }
@@ -1381,6 +1386,17 @@ function App() {
       });
     }
   }
+  //when gps is on, display distance of device to selected stop
+  function getDistance() {
+    const travelLine = turf.lineString([
+      [geoLocCoord.lng, geoLocCoord.lat],
+      busStops.get(popUpSetting.stopID).coordinates,
+    ]);
+    const distance = Number(
+      turf.length(travelLine, { units: "miles" })
+    ).toFixed(0);
+    return distance + " miles away";
+  }
   /*****************************************************************************/
 
   /**************************map reset button functions ********************/
@@ -1531,13 +1547,18 @@ function App() {
         haveStop={popUpSetting.haveStop}
         routeInfo={popUpSetting.routeInfo}
         stop={popUpSetting.active ? busStops.get(popUpSetting.stopID) : null}
+        currLoc={
+          popUpSetting.active && geoLocSetting && geoLocCoord.lat
+            ? getDistance()
+            : null
+        }
         arrival={popUpSetting.active ? arrivals.get(popUpSetting.stopID) : null}
         busArray={
           popUpSetting.active
             ? busMap.get(popUpSetting.routeInfo.route_id)
             : null
         }
-        favorite={
+        isFavorite={
           popUpSetting.active
             ? favorites[popUpSetting.routeInfo.route_id]
             : null

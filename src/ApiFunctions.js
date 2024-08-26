@@ -1,5 +1,4 @@
 import polyline from "@mapbox/polyline";
-
 export async function getAgency(bounds) {
   let url =
     "https://transloc-api-1-2.p.rapidapi.com/agencies.json?callback=call";
@@ -27,7 +26,7 @@ export async function getAgency(bounds) {
     const data = await response.json();
     return data.data;
   } catch (error) {
-    console.error(error);
+    return [];
   }
 }
 function agencyToString(agencyList) {
@@ -57,7 +56,22 @@ export async function getRoutes(agencyList) {
     });
     return routeList;
   } catch (error) {
+    return [];
+  }
+}
+export async function getCATRoutes() {
+  let url =
+    "https://catpublic.etaspot.net/service.php?service=get_routes&includeETAData=1&orderedETAArray=1&token=TESTING";
+  try {
+    const response = await fetch(url);
+    const result = await response.json();
+    //update encLine
+
+    //replace original encLine with my cleaned encLine
+    return result.get_routes;
+  } catch (error) {
     console.error(error);
+    return [];
   }
 }
 export async function getAllSegments(agencyList) {
@@ -77,12 +91,9 @@ export async function getAllSegments(agencyList) {
     result = result.data;
     //decode polyline data
     Object.keys(result).forEach((key) => {
-      const coordinateList = polyline
-        .decode(result[key])
-        .map((coordinate) => [coordinate[1], coordinate[0]]);
       result[key] = {
         type: "Feature",
-        geometry: { type: "LineString", coordinates: coordinateList },
+        geometry: polyline.toGeoJSON(result[key]),
       };
     });
     return result;
@@ -110,12 +121,9 @@ export async function getRouteSegments(agencyList, route) {
       const decodedSegments = [];
       //decode polyline data
       Object.keys(result).forEach((key) => {
-        const coordinateList = polyline
-          .decode(result[key])
-          .map((coordinate) => [coordinate[1], coordinate[0]]);
         decodedSegments.push({
           type: "Feature",
-          geometry: { type: "LineString", coordinates: coordinateList },
+          geometry: polyline.toGeoJSON(result[key]),
           properties: { color: "#" + route.color, routes: [route.route_id] },
         });
       });
@@ -124,6 +132,35 @@ export async function getRouteSegments(agencyList, route) {
     return null;
   } catch (error) {
     console.error(error);
+  }
+}
+export async function getCATRouteSegments() {
+  let url =
+    "https://catpublic.etaspot.net/service.php?service=get_patterns&includeETAData=1&orderedETAArray=1&token=TESTING";
+  try {
+    const response = await fetch(url);
+    const result = await response.json();
+    //update encLine
+
+    //replace original encLine with my cleaned encLine
+    const catSegmentDic = {};
+    result.get_patterns.map((segment) => {
+      const routeID = String(segment.routes[0]);
+      const decodedSegment = {
+        type: "Feature",
+        geometry: polyline.toGeoJSON(segment.encLine),
+        properties: { color: segment.color, routes: [routeID] },
+      };
+      if (catSegmentDic[routeID]) {
+        catSegmentDic[routeID].push(decodedSegment);
+      } else {
+        catSegmentDic[routeID] = [decodedSegment];
+      }
+    });
+    return catSegmentDic;
+  } catch (error) {
+    console.error(error);
+    return {};
   }
 }
 export async function getStops(agencyList) {
@@ -141,7 +178,22 @@ export async function getStops(agencyList) {
     const result = await response.json();
     return result.data;
   } catch (error) {
+    return [];
+  }
+}
+export async function getCATStops() {
+  let url =
+    "https://catpublic.etaspot.net/service.php?service=get_stops&includeETAData=1&orderedETAArray=1&token=TESTING";
+  try {
+    const response = await fetch(url);
+    const result = await response.json();
+    //update encLine
+
+    //replace original encLine with my cleaned encLine
+    return result.get_stops;
+  } catch (error) {
     console.error(error);
+    return [];
   }
 }
 function getColor(routes, routeID) {
@@ -165,7 +217,7 @@ export async function getCATBuses(routes) {
       return { ...bus, color: getColor(routes, String(bus.routeID)) };
     });
   } catch (error) {
-    console.error(error);
+    return [];
   }
 }
 export async function getCATArrivals() {
@@ -203,7 +255,7 @@ export async function getBuses(agencyList, routes) {
       return { ...bus, color: getColor(routes, bus.route_id) };
     });
   } catch (error) {
-    console.error(error);
+    return [];
   }
 }
 export async function getArrivalEstimates(agencyList) {
@@ -222,6 +274,6 @@ export async function getArrivalEstimates(agencyList) {
     const result = await response.json();
     return result.data;
   } catch (error) {
-    console.error(error);
+    return [];
   }
 }
