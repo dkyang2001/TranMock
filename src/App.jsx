@@ -85,10 +85,10 @@ function App() {
       container: mapContainer.current,
       center: [viewport.long, viewport.lat],
       zoom: viewport.zoom,
-      /*  maxBounds: [
+      maxBounds: [
         [-79.30649038019007, 37.07593093665458],
         [-77.77970744982255, 38.507663235091985],
-      ],*/
+      ],
       style: "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json",
       attributionControl: false,
     }).addControl(
@@ -286,10 +286,14 @@ function App() {
             )
           )
             check = true;
-        })(navigator.userAgent || navigator.vendor || window.opera);
+        })(navigator.userAgent || window.opera);
         return check;
       };
       //only activate gyroscope sensor on mobile
+      //is working but commented out for now
+      //users would have to accept request twice(location/orientation)
+      //need to do polling of users
+      /*
       if (mobileCheck() && window.DeviceOrientationEvent) {
         var isIOS = (function () {
           var iosQuirkPresent = function () {
@@ -328,7 +332,7 @@ function App() {
             true
           );
         }
-      }
+      }*/
       //start gps tracking for devices
       setGeoLocSetting(true);
     } else {
@@ -400,7 +404,7 @@ function App() {
   function configureRoutes() {
     //getting corresponding agencyName from agencyList
     function getAgencyName(agencyID) {
-      let result;
+      let result = null;
       agencyList.some((agency) => {
         if (Number(agency.agency_id) === agencyID) {
           result = agency.long_name;
@@ -521,38 +525,41 @@ function App() {
         }
         /************************************************/
         /******************CAT SECTION*******************/
-        const catRoutes = results[2];
-        const catSegments = results[3];
         const catRouteList = [];
-        //save the CAT routes
-        catRoutes.map((route) => {
-          const routeID = String(route.id);
-          const routeSegments = catSegments[routeID];
-          const routeCoordinates = [];
-          routeSegments.map((segment) => {
-            routeCoordinates.push(...segment.geometry.coordinates);
+        //only fetch if you are in the same region as uva agency
+        if (getAgencyName(347)) {
+          const catRoutes = results[2];
+          const catSegments = results[3];
+          //save the CAT routes
+          catRoutes.map((route) => {
+            const routeID = String(route.id);
+            const routeSegments = catSegments[routeID];
+            const routeCoordinates = [];
+            routeSegments.map((segment) => {
+              routeCoordinates.push(...segment.geometry.coordinates);
+            });
+            //calculate route bounds
+            const bounds = getBounds(routeCoordinates);
+            catRouteList.push({
+              ...route,
+              route_id: routeID,
+              long_name: route.name,
+              short_name: route.name,
+              bounds: bounds,
+              agencyName: "Charlottesville Area Transit",
+              segmentFeature: routeSegments,
+            });
+            routeConfig.set(routeID, {
+              route_id: routeID,
+              active: favorites[routeID] || num < limit, //set Active on routes
+              popUp: false,
+            });
+            //don't increase count if it was not in favorites
+            if (!favorites[routeID]) {
+              num++;
+            }
           });
-          //calculate route bounds
-          const bounds = getBounds(routeCoordinates);
-          catRouteList.push({
-            ...route,
-            route_id: routeID,
-            long_name: route.name,
-            short_name: route.name,
-            bounds: bounds,
-            agencyName: "Charlottesville Area Transit",
-            segmentFeature: routeSegments,
-          });
-          routeConfig.set(routeID, {
-            route_id: routeID,
-            active: favorites[routeID] || num < limit, //set Active on routes
-            popUp: false,
-          });
-          //don't increase count if it was not in favorites
-          if (!favorites[routeID]) {
-            num++;
-          }
-        });
+        }
         /*******************************************/
         //save all route data in state
         setRouteList({ transloc: translocRouteList, cat: catRouteList });
@@ -1404,6 +1411,52 @@ function App() {
     ).toFixed(0);
     return distance + " miles away";
   }
+
+  function filterSchedules() {
+    //time formatting functions ex: 9:30am to new Date() format
+    const formatTime = (timeString) => {
+      const d = new Date(),
+        parts = timeString.match(/(\d+)\:(\d+)(\w+)/),
+        hours = /am/i.test(parts[3])
+          ? parseInt(parts[1], 10)
+          : parseInt(parts[1], 10) == 12 //fix 12 with pm bug
+          ? parseInt(parts[1], 10)
+          : parseInt(parts[1], 10) + 12, //for all pm except 12
+        minutes = parseInt(parts[2], 10);
+      d.setHours(hours, minutes, 0, 0);
+      return d;
+    };
+    if (popUpSetting.routeInfo.agencyName === "Charlottesville Area Transit") {
+      //check for any combined stops with transloc
+      const stopID = duplicates[popUpSetting.stopID]
+        ? duplicates[popUpSetting.stopID]
+        : popUpSetting.stopID;
+      //check if schedule for route exists
+      if (schedules.get(popUpSetting.routeInfo.route_id)) {
+        const stopSchedule = schedules
+          .get(popUpSetting.routeInfo.route_id)
+          .get(stopID);
+        //check if stop schedule exists
+        if (stopSchedule) {
+          const currentTime = new Date();
+          const duplicateTime = {};
+          const filteredSchedule = stopSchedule.filter((schedule) => {
+            const convertTime = formatTime(schedule.stopTime);
+            if (convertTime - currentTime > 0) {
+              if (!duplicateTime[convertTime]) {
+                duplicateTime[convertTime] = true;
+                return true;
+              }
+              return false;
+            }
+            return false;
+          });
+          return filteredSchedule;
+        }
+      }
+    }
+    return null;
+  }
   /*****************************************************************************/
 
   /**************************map reset button functions ********************/
@@ -1493,46 +1546,6 @@ function App() {
     setSidebarPosition({ active: true });
     //set prevBound to currentBound
     setPrevBound(map.current.getBounds());
-  }
-  const formatTime = (timeString) => {
-    const d = new Date(),
-      parts = timeString.match(/(\d+)\:(\d+)(\w+)/),
-      hours = /am/i.test(parts[3])
-        ? parseInt(parts[1], 10)
-        : parseInt(parts[1], 10) == 12 //fix 12 with pm bug
-        ? parseInt(parts[1], 10)
-        : parseInt(parts[1], 10) + 12, //for all pm except 12
-      minutes = parseInt(parts[2], 10);
-    d.setHours(hours, minutes, 0, 0);
-    return d;
-  };
-  function filterSchedules() {
-    if (popUpSetting.routeInfo.agencyName === "Charlottesville Area Transit") {
-      //check for any combined stops with transloc
-      const stopID = duplicates[popUpSetting.stopID]
-        ? duplicates[popUpSetting.stopID]
-        : popUpSetting.stopID;
-      console.log(stopID, popUpSetting.routeInfo.route_id);
-      console.log(schedules);
-      const stopSchedule = schedules
-        .get(popUpSetting.routeInfo.route_id)
-        .get(stopID);
-      const currentTime = new Date();
-      const duplicateTime = {};
-      const filteredSchedule = stopSchedule.filter((schedule) => {
-        const convertTime = formatTime(schedule.stopTime);
-        if (convertTime - currentTime > 0) {
-          if (!duplicateTime[convertTime]) {
-            duplicateTime[convertTime] = true;
-            return true;
-          }
-          return false;
-        }
-        return false;
-      });
-      return filteredSchedule;
-    }
-    return null;
   }
   /*****************************************************************************/
   return (
