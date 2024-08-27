@@ -270,5 +270,6 @@ export async function getArrivalEstimates(agencyList) {
     return result.data;
   } catch (error) {
     console.error(error);
+    alert(error);
   }
 }
