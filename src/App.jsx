@@ -122,7 +122,6 @@ function App() {
         a.set(String(schedule.corridorID), [schedule]);
       }
     });
-    console.log(a);
   }, []);
   //map stop click
   useEffect(() => {
@@ -427,6 +426,7 @@ function App() {
           if (route.is_active) {
             if (route.segments !== null && route.segments.length > 0) {
               let routeCoordinates = []; //for calculating bounds
+              console.log(route);
               const routeSegments = route.segments.map((segment) => {
                 //grab segment in feature object from map
                 const decodedSegment = segmentMap[segment[0]];
@@ -898,7 +898,6 @@ function App() {
       clearInterval(arrivalInterval);
     };
   }, [routeList]);
-
   useEffect(() => {
     //main code lines for use effect
     if (Object.keys(routeList).length === 0) return;
@@ -1371,28 +1370,12 @@ function App() {
         localStorage.setItem("favorites", JSON.stringify(favorites));
         return { ...favorites };
       });
-      setRouteSetting(() => {
-        const selected = routeSetting.routes.get(route_id);
-        routeSetting.routes.set(route_id, {
-          ...selected,
-          active: false,
-        });
-        return { routes: routeSetting.routes };
-      });
     } else {
       //add favorite and activate route
       setFavorites(() => {
         favorites[route_id] = true;
         localStorage.setItem("favorites", JSON.stringify(favorites));
         return { ...favorites };
-      });
-      setRouteSetting(() => {
-        const selected = routeSetting.routes.get(route_id);
-        routeSetting.routes.set(route_id, {
-          ...selected,
-          active: true,
-        });
-        return { routes: routeSetting.routes };
       });
     }
   }

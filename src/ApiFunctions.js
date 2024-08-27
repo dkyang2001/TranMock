@@ -26,6 +26,7 @@ export async function getAgency(bounds) {
     const data = await response.json();
     return data.data;
   } catch (error) {
+    console.error(error);
     return [];
   }
 }
@@ -56,6 +57,7 @@ export async function getRoutes(agencyList) {
     });
     return routeList;
   } catch (error) {
+    console.error(error);
     return [];
   }
 }
@@ -178,6 +180,7 @@ export async function getStops(agencyList) {
     const result = await response.json();
     return result.data;
   } catch (error) {
+    console.error(error);
     return [];
   }
 }

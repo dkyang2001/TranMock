@@ -86,7 +86,6 @@ const PopUpMap = forwardRef(function PopUpMap(
       }
     }
   }, [viewport.zoom]);
-
   //Since BusStop Marker changes in state, need to reset onClick
   useEffect(() => {
     map.current.on("click", "stops", functions.popUpSetBusStop);
@@ -138,7 +137,10 @@ const PopUpMap = forwardRef(function PopUpMap(
       //reset padding for next popUp
       map.current.fitBounds(map.current.getBounds(), 0);
       //if route was already active,move markers back to original map
-      if (routeInfo.active && busArray && busArray.length > 0) {
+      if (
+        (routeInfo.active && busArray && busArray.length > 0) ||
+        (active && isFavorite && !routeInfo.active)
+      ) {
         busArray.map((bus) => {
           functions.moveBusToOriginal(bus.vehicle_id);
         });
