@@ -27,7 +27,6 @@ export async function getAgency(bounds) {
     return data.data;
   } catch (error) {
     console.error(error);
-    return [];
   }
 }
 function agencyToString(agencyList) {
@@ -58,7 +57,6 @@ export async function getRoutes(agencyList) {
     return routeList;
   } catch (error) {
     console.error(error);
-    return [];
   }
 }
 export async function getCATRoutes() {
@@ -73,7 +71,6 @@ export async function getCATRoutes() {
     return result.get_routes;
   } catch (error) {
     console.error(error);
-    return [];
   }
 }
 export async function getAllSegments(agencyList) {
@@ -162,7 +159,6 @@ export async function getCATRouteSegments() {
     return catSegmentDic;
   } catch (error) {
     console.error(error);
-    return {};
   }
 }
 export async function getStops(agencyList) {
@@ -181,7 +177,6 @@ export async function getStops(agencyList) {
     return result.data;
   } catch (error) {
     console.error(error);
-    return [];
   }
 }
 export async function getCATStops() {
@@ -196,7 +191,6 @@ export async function getCATStops() {
     return result.get_stops;
   } catch (error) {
     console.error(error);
-    return [];
   }
 }
 function getColor(routes, routeID) {
@@ -219,9 +213,7 @@ export async function getCATBuses(routes) {
     return vehicleList.map((bus) => {
       return { ...bus, color: getColor(routes, String(bus.routeID)) };
     });
-  } catch (error) {
-    return [];
-  }
+  } catch (error) {}
 }
 export async function getCATArrivals() {
   let url =
@@ -258,7 +250,7 @@ export async function getBuses(agencyList, routes) {
       return { ...bus, color: getColor(routes, bus.route_id) };
     });
   } catch (error) {
-    return [];
+    console.error(error);
   }
 }
 export async function getArrivalEstimates(agencyList) {
@@ -277,6 +269,6 @@ export async function getArrivalEstimates(agencyList) {
     const result = await response.json();
     return result.data;
   } catch (error) {
-    return [];
+    console.error(error);
   }
 }
