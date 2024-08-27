@@ -1349,38 +1349,21 @@ function App() {
       busMarkers.markers.get(vehicleID).marker.addTo(map.current);
   }
 
-  function popUpSetBusStop(e) {
-    //bbox for increasing click tolerance by 5px
-    const bbox = [
-      [e.point.x - 10, e.point.y - 10],
-      [e.point.x + 10, e.point.y + 10],
-    ];
-    //if visible stop is clicked
-    // Find features intersecting the bounding box.
-    const selectedFeatures = popUpMap.current
-      .getMap()
-      .queryRenderedFeatures(bbox, {
-        layers: ["stops"],
-      });
-    if (
-      selectedFeatures &&
-      selectedFeatures[0].layer.paint["circle-opacity"] === 1
-    ) {
-      //fly to stop
-      popUpMap.current.getMap().flyTo({
-        center: e.features[0].geometry.coordinates,
-      });
-      //remove previous stop marker and set a new one
-      if (popUpSetting.marker !== null) {
-        popUpSetting.marker.remove();
-      }
-      const marker = createBusStopMarker(e.features[0].geometry.coordinates);
-      setPopUpSetting({
-        ...popUpSetting,
-        stopID: e.features[0].properties.stopID,
-        marker: marker,
-      });
+  function popUpSetBusStop(feature) {
+    //fly to stop
+    popUpMap.current.getMap().flyTo({
+      center: feature.geometry.coordinates,
+    });
+    //remove previous stop marker and set a new one
+    if (popUpSetting.marker !== null) {
+      popUpSetting.marker.remove();
     }
+    const marker = createBusStopMarker(feature.geometry.coordinates);
+    setPopUpSetting({
+      ...popUpSetting,
+      stopID: feature.properties.stopID,
+      marker: marker,
+    });
   }
   function toggleFavorite(route_id) {
     if (favorites[route_id]) {

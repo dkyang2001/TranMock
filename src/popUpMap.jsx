@@ -89,9 +89,29 @@ const PopUpMap = forwardRef(function PopUpMap(
   }, [viewport.zoom]);
   //Since BusStop Marker changes in state, need to reset onClick
   useEffect(() => {
-    map.current.on("click", "stops", functions.popUpSetBusStop);
+    const onClick = (e) => {
+      //bbox for increasing click tolerance by 5px
+      const bbox = [
+        [e.point.x - 10, e.point.y - 10],
+        [e.point.x + 10, e.point.y + 10],
+      ];
+      // Find features intersecting the bounding box.
+      if (map.current.getSource("stops")) {
+        const selectedFeatures = map.current.queryRenderedFeatures(bbox, {
+          layers: ["stops"],
+        });
+        if (
+          selectedFeatures &&
+          selectedFeatures.length > 0 &&
+          selectedFeatures[0].layer.paint["circle-opacity"] === 1
+        ) {
+          functions.popUpSetBusStop(selectedFeatures[0]);
+        }
+      }
+    };
+    map.current.on("click", onClick);
     return () => {
-      map.current.off("click", "stops", functions.popUpSetBusStop);
+      map.current.off("click", onClick);
     };
   }, [functions.popUpSetBusStop]);
   /*******************************************************************************/
