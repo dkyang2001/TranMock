@@ -17,6 +17,7 @@ const PopUpMap = forwardRef(function PopUpMap(
     busArray,
     stop,
     arrival,
+    schedule,
     haveStop,
     isFavorite,
     currLoc,
@@ -305,15 +306,18 @@ const PopUpMap = forwardRef(function PopUpMap(
       return busName;
     }
     //set up arrival data accordingly- There can be empty representations
-    //for routes that either has few or no arrivals
-    if (!arrival) {
-      return [null, null];
+    //for routes that either has few or no arrivals/schedules
+    let tempArr = [];
+    if (arrival) {
+      tempArr = arrival.arrivals
+        .filter((item) => item.route_id === routeInfo.route_id)
+        .map((item) => {
+          return { ...item, busName: getBusName(item.vehicle_id) };
+        });
     }
-    let tempArr = arrival.arrivals
-      .filter((item) => item.route_id === routeInfo.route_id)
-      .map((item) => {
-        return { ...item, busName: getBusName(item.vehicle_id) };
-      });
+    if (schedule) {
+      tempArr = tempArr.concat(schedule);
+    }
     if (tempArr.length === 0) return [null, null];
     if (tempArr.length === 1) return tempArr.concat([null]);
     return tempArr;
@@ -351,8 +355,9 @@ const PopUpMap = forwardRef(function PopUpMap(
           ref={sidebar}
           state={4}
           stop={stop}
-          arrival={processArrival(arrival)}
+          arrival={processArrival()}
           color={routeInfo.color}
+          title={routeInfo.long_name}
           isFavorite={isFavorite}
           currLoc={currLoc}
           functions={{

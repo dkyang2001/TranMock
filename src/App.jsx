@@ -47,6 +47,7 @@ function App() {
   const [busStops, setBusStops] = useState(new Map());
   const [busMap, setBusMap] = useState(new Map());
   const [arrivals, setArrivals] = useState(new Map());
+  const [schedules, setSchedules] = useState(new Map());
   //bus marker storage state
   const [busMarkers, setBusMarkers] = useState({ markers: new Map() });
   /******user input settings*****************************************************/
@@ -114,14 +115,26 @@ function App() {
     if (localStorage.getItem("favorites")) {
       setFavorites(JSON.parse(localStorage.getItem("favorites")));
     }
-    const a = new Map();
+    const scheduleMap = new Map();
     something.get_schedules.map((schedule) => {
-      if (a.has(String(schedule.corridorID))) {
-        a.get(String(schedule.corridorID)).push(schedule);
+      schedule = { ...schedule, isSchedule: true };
+      const stopID = duplicates[String(schedule.stationID)]
+        ? duplicates[String(schedule.stationID)]
+        : String(schedule.stationID);
+      if (scheduleMap.has(String(schedule.corridorID))) {
+        const stopMap = scheduleMap.get(String(schedule.corridorID));
+        if (stopMap.has(stopID)) {
+          stopMap.get(stopID).push(schedule);
+        } else {
+          stopMap.set(stopID, [schedule]);
+        }
       } else {
-        a.set(String(schedule.corridorID), [schedule]);
+        const stopMap = new Map();
+        stopMap.set(stopID, [schedule]);
+        scheduleMap.set(String(schedule.corridorID), stopMap);
       }
     });
+    setSchedules(scheduleMap);
   }, []);
   //map stop click
   useEffect(() => {
@@ -1481,6 +1494,46 @@ function App() {
     //set prevBound to currentBound
     setPrevBound(map.current.getBounds());
   }
+  const formatTime = (timeString) => {
+    const d = new Date(),
+      parts = timeString.match(/(\d+)\:(\d+)(\w+)/),
+      hours = /am/i.test(parts[3])
+        ? parseInt(parts[1], 10)
+        : parseInt(parts[1], 10) == 12 //fix 12 with pm bug
+        ? parseInt(parts[1], 10)
+        : parseInt(parts[1], 10) + 12, //for all pm except 12
+      minutes = parseInt(parts[2], 10);
+    d.setHours(hours, minutes, 0, 0);
+    return d;
+  };
+  function filterSchedules() {
+    if (popUpSetting.routeInfo.agencyName === "Charlottesville Area Transit") {
+      //check for any combined stops with transloc
+      const stopID = duplicates[popUpSetting.stopID]
+        ? duplicates[popUpSetting.stopID]
+        : popUpSetting.stopID;
+      console.log(stopID, popUpSetting.routeInfo.route_id);
+      console.log(schedules);
+      const stopSchedule = schedules
+        .get(popUpSetting.routeInfo.route_id)
+        .get(stopID);
+      const currentTime = new Date();
+      const duplicateTime = {};
+      const filteredSchedule = stopSchedule.filter((schedule) => {
+        const convertTime = formatTime(schedule.stopTime);
+        if (convertTime - currentTime > 0) {
+          if (!duplicateTime[convertTime]) {
+            duplicateTime[convertTime] = true;
+            return true;
+          }
+          return false;
+        }
+        return false;
+      });
+      return filteredSchedule;
+    }
+    return null;
+  }
   /*****************************************************************************/
   return (
     <>
@@ -1547,6 +1600,7 @@ function App() {
             : null
         }
         arrival={popUpSetting.active ? arrivals.get(popUpSetting.stopID) : null}
+        schedule={popUpSetting.active ? filterSchedules() : null}
         busArray={
           popUpSetting.active
             ? busMap.get(popUpSetting.routeInfo.route_id)

@@ -26,6 +26,7 @@ const Sidebar = forwardRef(function Sidebar(
     isFavorite,
     geoLocState,
     currLoc,
+    title,
     functions,
   },
   Sidebar
@@ -186,7 +187,7 @@ const Sidebar = forwardRef(function Sidebar(
           </div>
         ) : state == 4 ? (
           arrival.map((arrival, index) => (
-            <ArrivalCard key={index} arrival={arrival} />
+            <ArrivalCard key={index} arrival={arrival} title={title} />
           ))
         ) : (
           routes.map((route) => (
@@ -287,29 +288,44 @@ function BusToggleButton({ active, name, color, clickFunction }) {
 }
 /**********************************************************************/
 /***********************For state 4:sidebar insidepopUp****************/
-function ArrivalCard({ arrival }) {
+function ArrivalCard({ arrival, title }) {
+  //title is for schedules to put route name instead of vehicle id
   return (
     <div className={styles.arrivalCard}>
       <div className={styles.leftPanel}>
         <div className={styles.stopIcon}></div>
-        {arrival ? <h5>{arrival.busName}</h5> : <h5>- - -</h5>}
+        {arrival ? (
+          arrival.isSchedule ? (
+            <h5 style={{ color: "gray" }}>{title}</h5>
+          ) : (
+            <h5>{arrival.busName}</h5>
+          )
+        ) : (
+          <h5>- - -</h5>
+        )}
       </div>
       {arrival && (
         <div className={styles.cardRightPanel}>
-          <div className={styles.wifiIcon}>
-            <div className={`${styles.wifi} ${styles.second}`}></div>
-            <div className={`${styles.wifi} ${styles.first}`}></div>
-          </div>
-          <div className={styles.timeSection}>
-            {Number(arrival.remaining) >= 1 ? (
-              <>
-                <div className={styles.remaining}>{arrival.remaining}</div>
-                <div>min</div>
-              </>
-            ) : (
-              <div className={styles.remaining}>Arriving</div>
-            )}
-          </div>
+          {arrival.isSchedule ? (
+            <div style={{ color: "gray" }}>{arrival.stopTime}</div>
+          ) : (
+            <>
+              <div className={styles.wifiIcon}>
+                <div className={`${styles.wifi} ${styles.second}`}></div>
+                <div className={`${styles.wifi} ${styles.first}`}></div>
+              </div>
+              <div className={styles.timeSection}>
+                {Number(arrival.remaining) >= 1 ? (
+                  <>
+                    <div className={styles.remaining}>{arrival.remaining}</div>
+                    <div>min</div>
+                  </>
+                ) : (
+                  <div className={styles.remaining}>Arriving</div>
+                )}
+              </div>
+            </>
+          )}
         </div>
       )}
     </div>
