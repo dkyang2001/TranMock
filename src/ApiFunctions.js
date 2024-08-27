@@ -27,6 +27,7 @@ export async function getAgency(bounds) {
     return data.data;
   } catch (error) {
     console.error(error);
+    alert(error);
   }
 }
 function agencyToString(agencyList) {
@@ -57,6 +58,7 @@ export async function getRoutes(agencyList) {
     return routeList;
   } catch (error) {
     console.error(error);
+    alert(error);
   }
 }
 export async function getCATRoutes() {
