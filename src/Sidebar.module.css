@@ -63,6 +63,7 @@
 }
 /*both arrival&route cards have a right panel*/
 .cardRightPanel {
+  flex: 0 0 auto;
   margin-left: auto;
   display: flex;
   justify-content: flex-end;
@@ -117,18 +118,28 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
+  overflow: hidden;
   gap: 5px;
 }
 .route_name {
   font-size: 14px;
+  max-height: 14px;
+  overflow: hidden;
+  white-space: nowrap; /* don't break the line */
+  text-overflow: ellipsis;
 }
 .agency_name {
   font-size: 12px;
+  max-height: 12px;
   color: gray;
+  overflow: hidden;
+  white-space: nowrap; /* don't break the line */
+  text-overflow: ellipsis;
 }
 /*route button within route card */
 /*can toggle routes*/
 .button {
+  flex: 0 0 auto;
   height: 30px;
   width: 90px;
   border-radius: 0% 40px 40px 0%;

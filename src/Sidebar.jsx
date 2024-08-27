@@ -241,7 +241,7 @@ function RouteCard({ state, route, functions }) {
         </svg>
       )}
       <div className={styles.nameSection}>
-        <div className={styles.route_name}>{route.long_name}</div>
+        <h4 className={styles.route_name}>{route.long_name}</h4>
         <div className={styles.agency_name}>{route.agencyName}</div>
       </div>
       <div className={styles.cardRightPanel}>
