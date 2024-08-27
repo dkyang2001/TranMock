@@ -185,10 +185,14 @@ function App() {
         });
       }
       function error(error) {
-        console.error("Error getting user location:", error);
+        //console.error("Error getting user location:", error);
       }
       // get the current users location
-      id = navigator.geolocation.watchPosition(success, error);
+      id = navigator.geolocation.watchPosition(success, error, {
+        maximumAge: 30000,
+        timeout: 100,
+        enableHighAccuracy: true,
+      });
     }
     // if geolocation is not supported by the users browser
     else {
@@ -426,7 +430,6 @@ function App() {
           if (route.is_active) {
             if (route.segments !== null && route.segments.length > 0) {
               let routeCoordinates = []; //for calculating bounds
-              console.log(route);
               const routeSegments = route.segments.map((segment) => {
                 //grab segment in feature object from map
                 const decodedSegment = segmentMap[segment[0]];
@@ -720,8 +723,6 @@ function App() {
           "circle-stroke-opacity-transition": { duration: 500 }, //transition for zoom
         },
       });
-      //initial so ignore any stop filtering
-      //stopFilter(true);
     }
   }
   //stops/stop_shadow layer fade animation
@@ -813,6 +814,7 @@ function App() {
           const toStore = {
             heading: bus.h,
             vehicle_id: String(bus.trainID),
+            call_name: bus.equipmentID,
             location: { lat: bus.lat, lng: bus.lng },
             color: bus.color,
           };
@@ -869,7 +871,6 @@ function App() {
       );
     }
     if (Object.keys(routeList).length === 0) return;
-    routeFilter();
     //update bus markers every 5 seconds
     Promise.all([
       getBuses(agencyList, routeList.transloc),
