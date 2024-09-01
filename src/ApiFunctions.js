@@ -1,5 +1,5 @@
 export async function getRoutes() {
-  const url = "http://3.95.137.105:3000/routes";
+  const url = "https://3.95.137.105:8443/routes";
   try {
     const response = await fetch(url);
     const result = await response.json();
@@ -9,7 +9,7 @@ export async function getRoutes() {
   }
 }
 export async function getAllSegments() {
-  const url = "http://3.95.137.105:3000/segments";
+  const url = "https://3.95.137.105:8443/segments";
   try {
     const response = await fetch(url);
     const result = await response.json();
@@ -19,7 +19,7 @@ export async function getAllSegments() {
   }
 }
 export async function getStops() {
-  const url = "http://3.95.137.105:3000/stops";
+  const url = "https://3.95.137.105:8443/stops";
   try {
     const response = await fetch(url);
     const result = await response.json();
@@ -29,7 +29,7 @@ export async function getStops() {
   }
 }
 export async function getBuses() {
-  const url = "http://3.95.137.105:3000/vehicles";
+  const url = "https://3.95.137.105:8443/vehicles";
   try {
     const response = await fetch(url);
     const result = await response.json();
@@ -39,7 +39,7 @@ export async function getBuses() {
   }
 }
 export async function getSchedule() {
-  const url = "http://3.95.137.105:3000/schedules";
+  const url = "https://3.95.137.105:8443/schedules";
   try {
     const response = await fetch(url);
     const result = await response.json();
