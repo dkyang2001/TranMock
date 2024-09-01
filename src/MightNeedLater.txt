@@ -1,0 +1,71 @@
+        //for transloc failed routes, try to get segments from segments api
+        //after specifying the route this time
+        if (failedRouteList.length > 0) {
+          Promise.all(
+            failedRouteList.map((route) => getRouteSegments(agencyList, route))
+          ).then((result) => {
+            failedRouteList.map((route, index) => {
+              const routeSegments = result[index];
+              if (routeSegments) {
+                //for succesful fetches
+                let routeCoordinates = [];
+                //grab all coordinates for route and filter them out
+                routeSegments.map((segment) => {
+                  routeCoordinates.push(...segment.geometry.coordinates);
+                });
+                //calculate route bounds
+                const bounds = getBounds(routeCoordinates);
+                //place processed route for storage
+                translocRouteList.push({
+                  ...route,
+                  color: "#" + route.color,
+                  segmentFeature: routeSegments,
+                  agencyName: getAgencyName(route.agency_id),
+                  bounds: bounds,
+                });
+                routeConfig.set(route.route_id, {
+                  route_id: route.route_id,
+                  active: favorites[route.route_id] || num < limit, //set Active on routes
+                  popUp: false,
+                });
+                //don't increase number if it was not in favorites
+                if (!favorites[route.route_id]) {
+                  num++;
+                }
+              }
+            });
+          });
+        }
+export async function getRouteSegments(agencyList, route) {
+  let url =
+    "https://transloc-api-1-2.p.rapidapi.com/segments.json?callback=call";
+  const options = {
+    method: "GET",
+    headers: {
+      "x-rapidapi-key": "f062b813d2mshb3006af2783d3bcp1babcbjsn0d0c0e05c095",
+      "x-rapidapi-host": "transloc-api-1-2.p.rapidapi.com",
+    },
+  };
+  url += "&agencies=" + agencyToString(agencyList);
+  url += "&routes=" + route.route_id;
+  try {
+    const response = await fetch(url, options);
+    let result = await response.json();
+    if (result) {
+      result = result.data;
+      const decodedSegments = [];
+      //decode polyline data
+      Object.keys(result).forEach((key) => {
+        decodedSegments.push({
+          type: "Feature",
+          geometry: polyline.toGeoJSON(result[key]),
+          properties: { color: "#" + route.color, routes: [route.route_id] },
+        });
+      });
+      return decodedSegments;
+    }
+    return null;
+  } catch (error) {
+    console.error(error);
+  }
+}

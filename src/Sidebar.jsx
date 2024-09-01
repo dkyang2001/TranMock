@@ -215,7 +215,7 @@ function RouteCard({ state, route, functions }) {
     >
       <BusToggleButton
         active={route.active}
-        name={route.short_name}
+        name={route.isCAT ? route.long_name : route.short_name}
         color={route.color}
         clickFunction={() => {
           functions.toggleActive(route.route_id);
@@ -298,7 +298,7 @@ function ArrivalCard({ arrival, title }) {
           arrival.isSchedule ? (
             <h5 style={{ color: "gray" }}>{title}</h5>
           ) : (
-            <h5>{arrival.busName}</h5>
+            <h5>{arrival.call_name}</h5>
           )
         ) : (
           <h5>- - -</h5>

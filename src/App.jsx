@@ -3,18 +3,11 @@ import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import styles from "./App.module.css";
 import {
-  getAgency,
   getRoutes,
   getAllSegments,
-  getRouteSegments,
   getBuses,
-  getCATBuses,
   getStops,
-  getArrivalEstimates,
-  getCATArrivals,
-  getCATRoutes,
-  getCATStops,
-  getCATRouteSegments,
+  getSchedule,
 } from "./ApiFunctions.js";
 import {
   createGeoLocElement,
@@ -28,7 +21,6 @@ import Sidebar from "./Sidebar.jsx";
 import cx from "classnames";
 import * as turf from "@turf/turf";
 import duplicates from "./combineStop.json";
-import something from "./something.json";
 function App() {
   /*********************   State/Ref Declaration *********************************/
   //viewport state
@@ -42,12 +34,19 @@ function App() {
   const [heading, setHeading] = useState(null);
   const [prevBound, setPrevBound] = useState(null);
   //api data storage states
-  const [agencyList, setAgencyList] = useState(null);
+  const [agencyList, setAgencyList] = useState([
+    {
+      long_name: "University of Virginia",
+      name: "uva",
+      short_name: "UVA",
+      agency_id: "347",
+    },
+  ]);
   const [routeList, setRouteList] = useState({});
   const [busStops, setBusStops] = useState(new Map());
   const [busMap, setBusMap] = useState(new Map());
   const [arrivals, setArrivals] = useState(new Map());
-  const [schedules, setSchedules] = useState(new Map());
+  const [schedules, setSchedules] = useState({});
   //bus marker storage state
   const [busMarkers, setBusMarkers] = useState({ markers: new Map() });
   /******user input settings*****************************************************/
@@ -85,10 +84,10 @@ function App() {
       container: mapContainer.current,
       center: [viewport.long, viewport.lat],
       zoom: viewport.zoom,
-      maxBounds: [
+      /*  maxBounds: [
         [-79.30649038019007, 37.07593093665458],
         [-77.77970744982255, 38.507663235091985],
-      ],
+      ],*/
       style: "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json",
       attributionControl: false,
     }).addControl(
@@ -108,34 +107,16 @@ function App() {
       const newZoom = map.current.getZoom().toFixed(2);
       setViewport({ lat: newLat, long: newLong, zoom: newZoom });
     });
-    //fetch agency
-    getAgency(map.current.getBounds()).then((agencyList) =>
-      setAgencyList(agencyList)
-    );
+    //get fetch favorites stored in browser memory
     if (localStorage.getItem("favorites")) {
       setFavorites(JSON.parse(localStorage.getItem("favorites")));
     }
-    const scheduleMap = new Map();
-    something.get_schedules.map((schedule) => {
-      schedule = { ...schedule, isSchedule: true };
-      const stopID = duplicates[String(schedule.stationID)]
-        ? duplicates[String(schedule.stationID)]
-        : String(schedule.stationID);
-      if (scheduleMap.has(String(schedule.corridorID))) {
-        const stopMap = scheduleMap.get(String(schedule.corridorID));
-        if (stopMap.has(stopID)) {
-          stopMap.get(stopID).push(schedule);
-        } else {
-          stopMap.set(stopID, [schedule]);
-        }
-      } else {
-        const stopMap = new Map();
-        stopMap.set(stopID, [schedule]);
-        scheduleMap.set(String(schedule.corridorID), stopMap);
-      }
+    //fetch and set CAT Schedule
+    getSchedule().then((scheduleDic) => {
+      setSchedules(scheduleDic);
     });
-    setSchedules(scheduleMap);
   }, []);
+
   //map stop click
   useEffect(() => {
     if (sidebarSetting.marker !== null) {
@@ -351,6 +332,11 @@ function App() {
   /**********************************************************************/
   /**********Configure stationary data & draw layers in mapbox **********/
   useEffect(() => {
+    /*This agency useEffect is an old remnant before I realized the transloc api
+    is rate limited by api key, so I had to limit it to only uva agency. Thus,
+    the agencyList is not required anymore, it just triggers the siebarSetting
+    and route/stop config. I am still keeping this code instead of deleting just
+    in case I use it later on.*/
     function getBoundDistance() {
       const bound = map.current.getBounds();
       var travelLine = turf.lineString([
@@ -402,17 +388,6 @@ function App() {
   }, [agencyList]);
   //routes fetcher
   function configureRoutes() {
-    //getting corresponding agencyName from agencyList
-    function getAgencyName(agencyID) {
-      let result = null;
-      agencyList.some((agency) => {
-        if (Number(agency.agency_id) === agencyID) {
-          result = agency.long_name;
-          return true;
-        }
-      });
-      return result;
-    }
     function getBounds(routeCoordinates) {
       //shorten by half for faster bound calculation
       routeCoordinates = routeCoordinates.filter(
@@ -424,142 +399,86 @@ function App() {
       }, new maplibregl.LngLatBounds(routeCoordinates[0], routeCoordinates[0]));
     }
     //grab routes and segments from api at the same time
-    Promise.all([
-      getRoutes(agencyList),
-      getAllSegments(agencyList),
-      getCATRoutes(),
-      getCATRouteSegments(),
-    ]).then((results) => {
+    Promise.all([getRoutes(), getAllSegments()]).then((results) => {
+      //store results
       const routes = results[0];
-      const segmentMap = results[1];
-      if (routes && routes.length > 0) {
+      const segments = results[1];
+      if (routes) {
         /*************TRANSLOC SECTION***************** */
         //for storing routes
         const translocRouteList = [];
         //for creating default setting
         const routeConfig = new Map();
-        //get lists that doesn't have segments
-        const failedRouteList = [];
         let num = 0; //for setting active on routes
         //limit set for active routes:8 including favorited routes
         const limit = 8 - Object.keys(favorites).length;
-        routes.map((route) => {
-          if (route.is_active) {
-            if (route.segments !== null && route.segments.length > 0) {
-              let routeCoordinates = []; //for calculating bounds
-              const routeSegments = route.segments.map((segment) => {
-                //grab segment in feature object from map
-                const decodedSegment = segmentMap[segment[0]];
-                //add coordinates from feature
-                routeCoordinates.push(...decodedSegment.geometry.coordinates);
-                //add more info about the route within the map feature for drawing
-                return {
-                  ...decodedSegment,
-                  properties: {
-                    color: "#" + route.color,
-                    routes: [route.route_id],
-                  },
-                };
-              });
-              //calculate route bounds
-              const bounds = getBounds(routeCoordinates);
-              //place processed route for storage
-              translocRouteList.push({
-                ...route,
-                color: "#" + route.color,
-                segmentFeature: routeSegments,
-                agencyName: getAgencyName(route.agency_id),
-                bounds: bounds,
-              });
-              routeConfig.set(route.route_id, {
-                route_id: route.route_id,
-                active: favorites[route.route_id] || num < limit, //set Active on routes
-                popUp: false, //no routes are on popUp yet
-              });
-              //don't increase count if it was not in favorites
-              if (!favorites[route.route_id]) {
-                num++;
-              }
-            } else {
-              failedRouteList.push(route); //for routes from api that didn't have segments data
-            }
-          }
-        });
-        //for transloc failed routes, try to get segments from segments api
-        //after specifying the route this time
-        if (failedRouteList.length > 0) {
-          Promise.all(
-            failedRouteList.map((route) => getRouteSegments(agencyList, route))
-          ).then((result) => {
-            failedRouteList.map((route, index) => {
-              const routeSegments = result[index];
-              if (routeSegments) {
-                //for succesful fetches
-                let routeCoordinates = [];
-                //grab all coordinates for route and filter them out
-                routeSegments.map((segment) => {
-                  routeCoordinates.push(...segment.geometry.coordinates);
-                });
-                //calculate route bounds
-                const bounds = getBounds(routeCoordinates);
-                //place processed route for storage
-                translocRouteList.push({
-                  ...route,
-                  color: "#" + route.color,
-                  segmentFeature: routeSegments,
-                  agencyName: getAgencyName(route.agency_id),
-                  bounds: bounds,
-                });
-                routeConfig.set(route.route_id, {
-                  route_id: route.route_id,
-                  active: favorites[route.route_id] || num < limit, //set Active on routes
-                  popUp: false,
-                });
-                //don't increase number if it was not in favorites
-                if (!favorites[route.route_id]) {
-                  num++;
-                }
-              }
-            });
-          });
-        }
-        /************************************************/
-        /******************CAT SECTION*******************/
-        const catRouteList = [];
-        //only fetch if you are in the same region as uva agency
-        if (getAgencyName(347)) {
-          const catRoutes = results[2];
-          const catSegments = results[3];
-          //save the CAT routes
-          catRoutes.map((route) => {
-            const routeID = String(route.id);
-            const routeSegments = catSegments[routeID];
-            const routeCoordinates = [];
-            routeSegments.map((segment) => {
-              routeCoordinates.push(...segment.geometry.coordinates);
+        routes.transloc_routes.map((route) => {
+          if (route.segments !== null && route.segments.length > 0) {
+            let routeCoordinates = []; //for calculating bounds
+            const routeSegments = route.segments.map((segment) => {
+              //grab segment in feature object from map
+              const decodedSegment = segments.transloc_segments[segment[0]];
+              //add coordinates from feature
+              routeCoordinates.push(...decodedSegment.geometry.coordinates);
+              //add more info about the route within the map feature for drawing
+              return {
+                ...decodedSegment,
+                properties: {
+                  color: route.color,
+                  routes: [route.route_id],
+                },
+              };
             });
             //calculate route bounds
             const bounds = getBounds(routeCoordinates);
-            catRouteList.push({
+            //place processed route for storage
+            translocRouteList.push({
               ...route,
-              route_id: routeID,
-              long_name: route.name,
-              short_name: route.name,
-              bounds: bounds,
-              agencyName: "Charlottesville Area Transit",
               segmentFeature: routeSegments,
+              agencyName: "University of Virginia",
+              bounds: bounds,
             });
-            routeConfig.set(routeID, {
-              route_id: routeID,
-              active: favorites[routeID] || num < limit, //set Active on routes
-              popUp: false,
+            routeConfig.set(route.route_id, {
+              route_id: route.route_id,
+              active: favorites[route.route_id] || num < limit, //set Active on routes
+              popUp: false, //no routes are on popUp yet
+              color: route.color,
             });
             //don't increase count if it was not in favorites
-            if (!favorites[routeID]) {
+            if (!favorites[route.route_id]) {
               num++;
             }
+          }
+        });
+        /************************************************/
+        /******************CAT SECTION*******************/
+        const catRouteList = [];
+        //save the CAT routes
+        routes.cat_routes.map((route) => {
+          const routeSegments = segments.cat_segments[route.route_id];
+          const routeCoordinates = [];
+          routeSegments.map((segment) => {
+            routeCoordinates.push(...segment.geometry.coordinates);
           });
-        }
+          //calculate route bounds
+          const bounds = getBounds(routeCoordinates);
+          catRouteList.push({
+            ...route,
+            bounds: bounds,
+            agencyName: "Charlottesville Area Transit",
+            segmentFeature: routeSegments,
+          });
+          routeConfig.set(route.route_id, {
+            route_id: route.route_id,
+            active: favorites[route.route_id] || num < limit, //set Active on routes
+            popUp: false,
+            color: route.color,
+          });
+          //don't increase count if it was not in favorites
+          if (!favorites[route.route_id]) {
+            num++;
+          }
+        });
         /*******************************************/
         //save all route data in state
         setRouteList({ transloc: translocRouteList, cat: catRouteList });
@@ -574,10 +493,10 @@ function App() {
   }
   function configureStops() {
     //fetch stops
-    Promise.all([getStops(agencyList), getCATStops()]).then((results) => {
-      /*****************TRANSLOC SECTION*********************/
-      const stops = results[0];
+    getStops().then((result) => {
       let stopMap = new Map();
+      /*****************TRANSLOC SECTION*********************/
+      const stops = result.transloc_stops;
       //turn list into maplibre features
       stops.map((stop) => {
         //store stop data
@@ -590,19 +509,19 @@ function App() {
       });
       /*******************CAT SECTION**********************/
       //push CAT stops into them and combine stops with transloc if needed
-      const CATStops = results[1];
+      const CATStops = result.cat_stops;
       CATStops.map((CATStop) => {
-        const stopID = duplicates[CATStop.extID]
-          ? duplicates[CATStop.extID]
-          : CATStop.extID;
+        const stopID = duplicates[CATStop.stop_id]
+          ? duplicates[CATStop.stop_id]
+          : CATStop.stop_id;
         if (stopMap.has(stopID)) {
-          stopMap.get(stopID).routes.push(String(CATStop.rid));
+          stopMap.get(stopID).routes.push(CATStop.route_id);
         } else {
           stopMap.set(stopID, {
             name: CATStop.name,
-            routes: [String(CATStop.rid)],
+            routes: [CATStop.route_id],
             stop_id: stopID,
-            coordinates: [CATStop.lng, CATStop.lat],
+            coordinates: CATStop.coordinates,
           });
         }
       });
@@ -617,7 +536,7 @@ function App() {
           },
           geometry: {
             type: "Point",
-            coordinates: [stop.coordinates[0], stop.coordinates[1]],
+            coordinates: stop.coordinates,
           },
         });
       });
@@ -819,104 +738,103 @@ function App() {
     //converting fetched bus array into map
     function storeBuses(result) {
       const busMap = new Map();
-      result[0].map((bus) => {
-        if (bus.location) {
-          if (!busMap.has(bus.route_id)) {
-            busMap.set(bus.route_id, [bus]);
-          } else {
-            busMap.get(bus.route_id).push(bus);
-          }
-        }
-      });
-      result[1].map((bus) => {
-        if (bus.inService === 1) {
-          const routeID = String(bus.routeID);
+      const arrivalMap = new Map();
+      /****************** Transloc Section *********************/
+      result.transloc_vehicles.map((bus) => {
+        const routeInfo = routeSetting.routes.get(bus.route_id);
+        if (bus.location[0] && routeInfo) {
+          //add color to transloc buses
           const toStore = {
-            heading: bus.h,
-            vehicle_id: String(bus.trainID),
-            call_name: bus.equipmentID,
-            location: { lat: bus.lat, lng: bus.lng },
-            color: bus.color,
+            ...bus,
+            color: routeInfo.color,
           };
-          if (!busMap.has(routeID)) {
-            busMap.set(routeID, [toStore]);
+          if (!busMap.has(bus.route_id)) {
+            busMap.set(bus.route_id, [toStore]);
           } else {
-            busMap.get(routeID).push(toStore);
+            busMap.get(bus.route_id).push(toStore);
           }
+          //arrivals
+          bus.arrival_estimates.map((arrival) => {
+            //store estimates as remaining min
+            const toStore = {
+              call_name: bus.call_name,
+              remaining: Math.floor(
+                (new Date(arrival.arrival_at) - new Date()) / 60000
+              ),
+            };
+            if (arrivalMap.has(arrival.route_id)) {
+              const arrivalRoute = arrivalMap.get(arrival.route_id);
+              if (arrivalRoute.has(arrival.stop_id)) {
+                arrivalRoute.get(arrival.stop_id).push(toStore);
+              } else {
+                arrivalRoute.set(arrival.stop_id, [toStore]);
+              }
+            } else {
+              const arrivalStop = new Map();
+              arrivalStop.set(arrival.stop_id, [toStore]);
+              arrivalMap.set(arrival.route_id, arrivalStop);
+            }
+          });
         }
       });
-      setBusMap(busMap);
-    }
-    //converting fetched arrival array into map and process data within
-    function arrivalUpdate() {
-      Promise.all([getArrivalEstimates(agencyList), getCATArrivals()]).then(
-        (results) => {
-          const arrivals = results[0];
-          const arrivalMap = new Map();
-          arrivals.map((arrival) => {
-            arrival.arrivals = arrival.arrivals.map((item) => {
-              return {
-                ...item,
-                remaining: Math.floor(
-                  //calculate remaining time
-                  (new Date(item.arrival_at) - new Date()) / 60000
-                ),
-              };
-            });
-            arrivalMap.set(arrival.stop_id, arrival);
-          });
-          const catArrivals = results[1];
-          catArrivals.map((vehicle) => {
-            const vehicleID = String(vehicle.trainID);
-            vehicle.minutesToNextStops.map((arrival) => {
-              let stopID = String(arrival.stopID);
-              stopID = duplicates[stopID] ? duplicates[stopID] : stopID;
-              const arrivalItem = {
-                route_id: String(arrival.routeID),
-                vehicle_id: vehicleID,
-                remaining: arrival.minutes,
-              };
-              if (arrivalMap.has(stopID)) {
-                arrivalMap.get(stopID).arrivals.push(arrivalItem);
+      /*****************************************************/
+      /******************* CAT Section *********************/
+      result.cat_vehicles.map((bus) => {
+        const routeInfo = routeSetting.routes.get(bus.route_id);
+        if (bus.location[0] && routeInfo) {
+          //add color to transloc buses
+          const toStore = {
+            ...bus,
+            color: routeInfo.color,
+          };
+          if (!busMap.has(bus.route_id)) {
+            busMap.set(bus.route_id, [toStore]);
+          } else {
+            busMap.get(bus.route_id).push(toStore);
+          }
+          //arrivals
+          bus.minutesToNextStops.map((arrival) => {
+            //store estimates as remaining min
+            const toStore = {
+              call_name: arrival.equipmentID,
+              remaining: arrival.minutes,
+            };
+            //convert duplicates to transloc stops
+            const stop_id = duplicates[String(arrival.stopID)]
+              ? duplicates[String(arrival.stopID)]
+              : String(arrival.stopID);
+            if (arrivalMap.has(bus.route_id)) {
+              const arrivalRoute = arrivalMap.get(bus.route_id);
+              if (arrivalRoute.has(stop_id)) {
+                arrivalRoute.get(stop_id).push(toStore);
               } else {
-                arrivalMap.set(stopID, {
-                  stop_id: stopID,
-                  arrivals: [arrivalItem],
-                });
+                arrivalRoute.set(stop_id, [toStore]);
               }
-            });
+            } else {
+              const arrivalStop = new Map();
+              arrivalStop.set(stop_id, [toStore]);
+              arrivalMap.set(bus.route_id, arrivalStop);
+            }
           });
-          setArrivals(arrivalMap);
         }
-      );
+      });
+      /*****************************************************/
+      setBusMap(busMap);
+      setArrivals(arrivalMap);
     }
     if (Object.keys(routeList).length === 0) return;
     //update bus markers every 5 seconds
-    Promise.all([
-      getBuses(agencyList, routeList.transloc),
-      getCATBuses(routeList.cat),
-    ]).then((result) => {
+    getBuses().then((result) => {
       storeBuses(result);
     });
-    const busInterval = setInterval(
-      () =>
-        Promise.all([
-          getBuses(agencyList, routeList.transloc),
-          getCATBuses(routeList.cat),
-        ]).then((result) => {
-          storeBuses(result);
-        }),
-      5000
-    );
-    //update busStop arrivals every 30 seconds
-    arrivalUpdate();
-    const arrivalInterval = setInterval(() => {
-      arrivalUpdate();
-    }, 20000);
+    const busInterval = setInterval(() => {
+      getBuses().then((result) => {
+        storeBuses(result);
+      });
+    }, 5000);
 
     return () => {
       clearInterval(busInterval);
-      clearInterval(arrivalInterval);
     };
   }, [routeList]);
   useEffect(() => {
@@ -935,12 +853,21 @@ function App() {
       const busArray = [];
       const allRoutes = routeList.transloc.concat(routeList.cat);
       allRoutes.map((route) => {
-        const setting = routeSetting.routes.get(route.route_id);
-        if (setting.active || setting.popUp) {
-          if (busMap.has(route.route_id)) {
+        if (busMap.has(route.route_id)) {
+          const setting = routeSetting.routes.get(route.route_id);
+          //add buses in active routes
+          if (setting.active) {
             busArray.push(
               ...busMap.get(route.route_id).map((bus) => {
-                return { ...bus, forPopUp: !setting.active && setting.popUp }; //create indication for inactive popUp
+                return { ...bus, forPopUp: false };
+              })
+            );
+          }
+          //add extra buses for popUp to popUp
+          if (setting.popUp) {
+            busArray.push(
+              ...busMap.get(route.route_id).map((bus) => {
+                return { ...bus, forPopUp: true };
               })
             );
           }
@@ -969,7 +896,10 @@ function App() {
       //deleting unused busMarkers before animating
       busMarkers.markers.forEach((busItem, vehicleID) => {
         for (let i = 0; i < buses.length; i++) {
-          if (vehicleID === buses[i].vehicle_id) {
+          const busID = buses[i].forPopUp
+            ? buses[i].vehicle_id + "pop"
+            : buses[i].vehicle_id;
+          if (vehicleID === busID) {
             return;
           }
         }
@@ -979,7 +909,8 @@ function App() {
 
       //creating or animating buses
       buses.map((bus) => {
-        if (!busMarkers.markers.has(bus.vehicle_id)) {
+        const busID = bus.forPopUp ? bus.vehicle_id + "pop" : bus.vehicle_id;
+        if (!busMarkers.markers.has(busID)) {
           //create bus element
           const el = createBusElement(bus.color, toCorrectAngle(bus.heading));
           let marker;
@@ -995,33 +926,33 @@ function App() {
               element: el,
               rotationAlignment: "map",
             })
-              .setLngLat([bus.location.lng, bus.location.lat])
+              .setLngLat(bus.location)
               .addTo(map.current);
           } else {
             marker = new maplibregl.Marker({ element: el })
-              .setLngLat([bus.location.lng, bus.location.lat])
+              .setLngLat(bus.location)
               .addTo(popUpMap.current.getMap());
           }
           //store marker,angle,and location
-          addBusMarker(bus.vehicle_id, {
+          addBusMarker(busID, {
             marker: marker,
             angle: toCorrectAngle(bus.heading),
-            loc: [bus.location.lng, bus.location.lat],
+            loc: bus.location,
             prevLoc: null,
           });
         } else {
           //grab the specific marker and info
-          const busInfo = busMarkers.markers.get(bus.vehicle_id);
+          const busInfo = busMarkers.markers.get(busID);
           //rotate to appropriate angle
           const newAngle = rotateThis(
             busInfo.marker.getElement().firstChild,
             toCorrectAngle(bus.heading),
             busInfo.angle
           );
-          addBusMarker(bus.vehicle_id, {
+          addBusMarker(busID, {
             marker: busInfo.marker,
             angle: newAngle,
-            loc: [bus.location.lng, bus.location.lat],
+            loc: bus.location,
             prevLoc: busInfo.loc,
           });
         }
@@ -1154,15 +1085,16 @@ function App() {
     });
     //get arrival data for the stop if it exists
     return filteredRoute.map((route, i) => {
-      if (arrivals.has(sidebarSetting.stopID)) {
-        const arrivalList = arrivals.get(sidebarSetting.stopID).arrivals;
-        for (let i = 0; i < arrivalList.length; i++) {
-          if (arrivalList[i].route_id === route.route_id)
-            //attach arrival info to specific routes
-            return {
-              ...route,
-              remaining: arrivalList[i].remaining,
-            };
+      if (arrivals.has(route.route_id)) {
+        const arrivalRoute = arrivals.get(route.route_id);
+        if (arrivalRoute.has(sidebarSetting.stopID)) {
+          const sortedArrivals = arrivalRoute
+            .get(sidebarSetting.stopID)
+            .sort((a, b) => a.remaining - b.remaining);
+          return {
+            ...route,
+            remaining: sortedArrivals[0].remaining,
+          };
         }
       }
       return {
@@ -1188,6 +1120,7 @@ function App() {
     //get first stop of route
     function getFirstStop(route_id) {
       let id;
+      //grab route's stops
       allRoutes.some((route) => {
         if (route.route_id === route_id) {
           id = String(route.stops[0]);
@@ -1202,6 +1135,7 @@ function App() {
     //get closest stop using distance
     function getClosestStop(route_id) {
       let stops;
+      //grab route's stops
       allRoutes.some((route) => {
         if (route.route_id === route_id) {
           stops = route.stops;
@@ -1211,6 +1145,7 @@ function App() {
       let minStopID = String(stops[0]);
       let minDistance = Infinity;
       const currentLoc = [geoLocCoord.lng, geoLocCoord.lat];
+      //pick the closest stop
       stops.map((stopID) => {
         stopID = String(stopID);
         const translocID = duplicates[stopID];
@@ -1225,16 +1160,7 @@ function App() {
       });
       return minStopID;
     }
-    let routeInfo = null;
-    //retrieve route info
-    allRoutes.map((route, i) => {
-      if (route.route_id === route_id) {
-        routeInfo = {
-          ...route,
-          active: routeSetting.routes.get(route_id).active,
-        };
-      }
-    });
+
     //get a stop if there is no stopId prepared
     const stopID =
       sidebarSetting.stopID !== null
@@ -1248,11 +1174,11 @@ function App() {
     setPopUpSetting({
       active: true,
       haveStop: sidebarSetting.stopID !== null, //for fitting route vs specific stop
-      routeInfo: routeInfo,
+      routeID: route_id,
       stopID: stopID,
       marker: marker,
     });
-    //set route popUp to active
+    //set route popUp to active for buses to move
     setRouteSetting(() => {
       const selected = routeSetting.routes.get(route_id);
       routeSetting.routes.set(route_id, {
@@ -1339,15 +1265,6 @@ function App() {
       return { routes: routeSetting.routes };
     });
   }
-  //functions for moving busMarkers to popUp and main
-  function moveBusToPopUp(vehicleID) {
-    if (busMarkers.markers.has(vehicleID))
-      busMarkers.markers.get(vehicleID).marker.addTo(popUpMap.current.getMap());
-  }
-  function moveBusToOriginal(vehicleID) {
-    if (busMarkers.markers.has(vehicleID))
-      busMarkers.markers.get(vehicleID).marker.addTo(map.current);
-  }
 
   function popUpSetBusStop(feature) {
     //fly to stop
@@ -1374,12 +1291,28 @@ function App() {
         localStorage.setItem("favorites", JSON.stringify(favorites));
         return { ...favorites };
       });
+      setRouteSetting(() => {
+        const selected = routeSetting.routes.get(route_id);
+        routeSetting.routes.set(route_id, {
+          ...selected,
+          active: false,
+        });
+        return { routes: routeSetting.routes };
+      });
     } else {
       //add favorite and activate route
       setFavorites(() => {
         favorites[route_id] = true;
         localStorage.setItem("favorites", JSON.stringify(favorites));
         return { ...favorites };
+      });
+      setRouteSetting(() => {
+        const selected = routeSetting.routes.get(route_id);
+        routeSetting.routes.set(route_id, {
+          ...selected,
+          active: true,
+        });
+        return { routes: routeSetting.routes };
       });
     }
   }
@@ -1394,7 +1327,21 @@ function App() {
     ).toFixed(0);
     return distance + " miles away";
   }
-
+  function getRouteInfo() {
+    const allRoutes = routeList.transloc.concat(routeList.cat);
+    let routeInfo = null;
+    //retrieve route info
+    allRoutes.map((route, i) => {
+      if (route.route_id === popUpSetting.routeID) {
+        routeInfo = {
+          ...route,
+          active: routeSetting.routes.get(popUpSetting.routeID).active,
+          favorite: favorites[popUpSetting.routeID],
+        };
+      }
+    });
+    return routeInfo;
+  }
   function filterSchedules() {
     //time formatting functions ex: 9:30am to new Date() format
     const formatTime = (timeString) => {
@@ -1409,34 +1356,35 @@ function App() {
       d.setHours(hours, minutes, 0, 0);
       return d;
     };
-    if (popUpSetting.routeInfo.agencyName === "Charlottesville Area Transit") {
-      //check for any combined stops with transloc
-      const stopID = duplicates[popUpSetting.stopID]
-        ? duplicates[popUpSetting.stopID]
-        : popUpSetting.stopID;
-      //check if schedule for route exists
-      if (schedules.get(popUpSetting.routeInfo.route_id)) {
-        const stopSchedule = schedules
-          .get(popUpSetting.routeInfo.route_id)
-          .get(stopID);
-        //check if stop schedule exists
-        if (stopSchedule) {
-          const currentTime = new Date();
-          const duplicateTime = {};
-          const filteredSchedule = stopSchedule.filter((schedule) => {
-            const convertTime = formatTime(schedule.stopTime);
-            if (convertTime - currentTime > 0) {
-              if (!duplicateTime[convertTime]) {
-                duplicateTime[convertTime] = true;
-                return true;
-              }
-              return false;
+    //check if schedule for route exists
+    if (schedules[popUpSetting.routeID]) {
+      const stopSchedule = schedules[popUpSetting.routeID][popUpSetting.stopID];
+      //check if stop schedule exists
+      if (stopSchedule) {
+        const currentTime = new Date();
+        const duplicateTime = {};
+        const filteredSchedule = stopSchedule.filter((schedule) => {
+          const convertTime = formatTime(schedule.stopTime);
+          if (convertTime - currentTime > 0) {
+            if (!duplicateTime[convertTime]) {
+              duplicateTime[convertTime] = true;
+              return true;
             }
             return false;
-          });
-          return filteredSchedule;
-        }
+          }
+          return false;
+        });
+        return filteredSchedule;
       }
+    }
+
+    return null;
+  }
+  function getArrivals() {
+    if (arrivals.has(popUpSetting.routeID)) {
+      const arrivalRoute = arrivals.get(popUpSetting.routeID);
+      if (arrivalRoute.has(popUpSetting.stopID))
+        return arrivalRoute.get(popUpSetting.stopID);
     }
     return null;
   }
@@ -1456,19 +1404,14 @@ function App() {
     //had to be one of the leaves
     return (isVerticalLeave || isHorizontalLeave) && viewport.zoom > 12;
   }
+
   //function for checking what to reset based on results
+  //current resetMap will only check for transloc route changes
+  //such as number of routes or segment changes
+  //Because CAT Routes segments don't change during the day.
   function resetMap() {
-    function isAgencyListSame(list) {
-      if (agencyList.length === 0 || list.length !== agencyList.length)
-        return false;
-      for (let i = 0; i < list.length; i++) {
-        if (list[i].agency_id !== agencyList[i].agency_id) {
-          return false;
-        }
-      }
-      return true;
-    }
     function isRouteListSame(routes) {
+      routes = routes.transloc_routes;
       //set routeList if more or less route to be added
       const filteredRoute = routes.filter((route) => route.is_active);
       if (filteredRoute.length !== routeList.transloc.length) return false;
@@ -1495,27 +1438,19 @@ function App() {
       }
       return true;
     }
-    //fetch agency
-    getAgency(map.current.getBounds()).then((list) => {
-      //agency length or items within are different, trigger update routes
-      if (!isAgencyListSame(list)) {
-        setAgencyList(list);
-      } else {
-        //routes are updated, trigger update on routes
-        getRoutes(agencyList).then((routes) => {
-          if (!isRouteListSame(routes)) {
-            map.current.removeLayer("routes");
-            map.current.removeSource("routes");
-            popUpMap.current.getMap().removeLayer("routes");
-            popUpMap.current.getMap().removeSource("routes");
-            //deleting every busMarker if it exists
-            busMarkers.markers.forEach((busItem, vehicleID) => {
-              busItem.marker.remove();
-            });
-            setBusMarkers({ markers: new Map() });
-            configureRoutes();
-          }
+    //routes are updated, trigger update on routes
+    getRoutes().then((routes) => {
+      if (!isRouteListSame(routes)) {
+        map.current.removeLayer("routes");
+        map.current.removeSource("routes");
+        popUpMap.current.getMap().removeLayer("routes");
+        popUpMap.current.getMap().removeSource("routes");
+        //deleting every busMarker if it exists
+        busMarkers.markers.forEach((busItem, vehicleID) => {
+          busItem.marker.remove();
         });
+        setBusMarkers({ markers: new Map() });
+        configureRoutes();
       }
     });
     //remove markers
@@ -1587,31 +1522,20 @@ function App() {
       </div>
       <PopUpMap
         active={popUpSetting.active}
-        haveStop={popUpSetting.haveStop}
-        routeInfo={popUpSetting.routeInfo}
-        stop={popUpSetting.active ? busStops.get(popUpSetting.stopID) : null}
+        haveStop={popUpSetting.haveStop} //a boolean config for init zoom on route/stop
+        routeInfo={popUpSetting.active ? getRouteInfo() : null} //route infos for popUp
+        stop={popUpSetting.active ? busStops.get(popUpSetting.stopID) : null} //stop infos for popUp
         currLoc={
           popUpSetting.active && geoLocSetting && geoLocCoord.lat
             ? getDistance()
             : null
-        }
-        arrival={popUpSetting.active ? arrivals.get(popUpSetting.stopID) : null}
-        schedule={popUpSetting.active ? filterSchedules() : null}
-        busArray={
-          popUpSetting.active
-            ? busMap.get(popUpSetting.routeInfo.route_id)
-            : null
-        }
-        isFavorite={
-          popUpSetting.active
-            ? favorites[popUpSetting.routeInfo.route_id]
-            : null
-        }
+        } //how far away the stop is from your current location
+        arrival={popUpSetting.active ? getArrivals() : null} //arrival info
+        schedule={popUpSetting.active ? filterSchedules() : null} //schedule info
+        busArray={popUpSetting.active ? busMap.get(popUpSetting.routeID) : null} //buses to be added for popUp
         ref={popUpMap}
         functions={{
           closePopUp: closePopUp,
-          moveBusToPopUp: moveBusToPopUp,
-          moveBusToOriginal: moveBusToOriginal,
           popUpSetBusStop: popUpSetBusStop,
           toggleFavorite: toggleFavorite,
         }}

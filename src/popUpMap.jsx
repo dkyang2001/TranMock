@@ -13,13 +13,12 @@ import Sidebar from "./Sidebar";
 const PopUpMap = forwardRef(function PopUpMap(
   {
     active,
+    haveStop, //this is a one time use when initing popUp open
     routeInfo,
-    busArray,
     stop,
+    busArray,
     arrival,
     schedule,
-    haveStop,
-    isFavorite,
     currLoc,
     functions,
   },
@@ -139,14 +138,6 @@ const PopUpMap = forwardRef(function PopUpMap(
         duration: 0,
       });
     }
-    if (busArray && busArray.length > 0) {
-      //if route was already active, move markers to popUp map
-      if (routeInfo.active) {
-        busArray.map((bus) => {
-          functions.moveBusToPopUp(bus.vehicle_id);
-        });
-      }
-    }
     return () => {
       //remove padding for next popUp
       map.current.flyTo({
@@ -157,15 +148,6 @@ const PopUpMap = forwardRef(function PopUpMap(
       });
       //reset padding for next popUp
       map.current.fitBounds(map.current.getBounds(), 0);
-      //if route was already active,move markers back to original map
-      if (
-        (routeInfo.active && busArray && busArray.length > 0) ||
-        (active && isFavorite && !routeInfo.active)
-      ) {
-        busArray.map((bus) => {
-          functions.moveBusToOriginal(bus.vehicle_id);
-        });
-      }
     };
   }, [active]);
   useEffect(() => {
@@ -314,27 +296,9 @@ const PopUpMap = forwardRef(function PopUpMap(
 
   //process arrival for use in sidebar
   function processArrival() {
-    //retrieve bus call name from array
-    function getBusName(vehicleID) {
-      let busName;
-      busArray.some((bus) => {
-        if (bus.vehicle_id === vehicleID) {
-          busName = bus.call_name;
-          return true;
-        }
-      });
-      return busName;
-    }
-    //set up arrival data accordingly- There can be empty representations
-    //for routes that either has few or no arrivals/schedules
-    let tempArr = [];
-    if (arrival) {
-      tempArr = arrival.arrivals
-        .filter((item) => item.route_id === routeInfo.route_id)
-        .map((item) => {
-          return { ...item, busName: getBusName(item.vehicle_id) };
-        });
-    }
+    let tempArr = arrival ? arrival : [];
+    //sort arrivals in asscending time
+    tempArr.sort((a, b) => a.remaining - b.remaining);
     if (schedule) {
       tempArr = tempArr.concat(schedule);
     }
@@ -361,7 +325,7 @@ const PopUpMap = forwardRef(function PopUpMap(
         {active && (
           <div className={styles.routeTitle}>
             <h4 className={styles.routeName}>
-              {routeInfo.short_name === ""
+              {!routeInfo.short_name || routeInfo.short_name === ""
                 ? routeInfo.long_name
                 : routeInfo.short_name + ": " + routeInfo.long_name}
             </h4>
@@ -378,7 +342,7 @@ const PopUpMap = forwardRef(function PopUpMap(
           arrival={processArrival()}
           color={routeInfo.color}
           title={routeInfo.long_name}
-          isFavorite={isFavorite}
+          isFavorite={routeInfo.favorite}
           currLoc={currLoc}
           functions={{
             touchStart: touchStart,
