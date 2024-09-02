@@ -16,7 +16,6 @@ const PopUpMap = forwardRef(function PopUpMap(
     haveStop, //this is a one time use when initing popUp open
     routeInfo,
     stop,
-    busArray,
     arrival,
     schedule,
     currLoc,
@@ -298,7 +297,8 @@ const PopUpMap = forwardRef(function PopUpMap(
   function processArrival() {
     let tempArr = arrival ? arrival : [];
     //sort arrivals in asscending time
-    tempArr.sort((a, b) => a.remaining - b.remaining);
+    tempArr.filter((item) => item.remaining < 0); //filter out past arrivals just in case
+    tempArr.sort((a, b) => a.remaining - b.remaining); //sort in ascending order
     if (schedule) {
       tempArr = tempArr.concat(schedule);
     }

@@ -1532,7 +1532,6 @@ function App() {
         } //how far away the stop is from your current location
         arrival={popUpSetting.active ? getArrivals() : null} //arrival info
         schedule={popUpSetting.active ? filterSchedules() : null} //schedule info
-        busArray={popUpSetting.active ? busMap.get(popUpSetting.routeID) : null} //buses to be added for popUp
         ref={popUpMap}
         functions={{
           closePopUp: closePopUp,

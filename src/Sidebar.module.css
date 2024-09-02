@@ -44,6 +44,7 @@
 .titleContainer {
   padding: 25px 30px;
   display: flex;
+  gap: 10px;
   align-items: center;
 }
 .titleLeftTop {

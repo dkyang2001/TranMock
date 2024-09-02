@@ -1,5 +1,6 @@
 export async function getRoutes() {
-  const url = "https://421421421.ddns.net/routes";
+  const url = "http://localhost:3000/routes";
+  // const url = "https://421421421.ddns.net/routes";
   try {
     const response = await fetch(url);
     const result = await response.json();
@@ -9,7 +10,8 @@ export async function getRoutes() {
   }
 }
 export async function getAllSegments() {
-  const url = "https://421421421.ddns.net/segments";
+  const url = "http://localhost:3000/segments";
+  // const url = "https://421421421.ddns.net/segments";
   try {
     const response = await fetch(url);
     const result = await response.json();
@@ -19,7 +21,8 @@ export async function getAllSegments() {
   }
 }
 export async function getStops() {
-  const url = "https://421421421.ddns.net/stops";
+  const url = "http://localhost:3000/stops";
+  // const url = "https://421421421.ddns.net/stops";
   try {
     const response = await fetch(url);
     const result = await response.json();
@@ -29,7 +32,8 @@ export async function getStops() {
   }
 }
 export async function getBuses() {
-  const url = "https://421421421.ddns.net/vehicles";
+  const url = "http://localhost:3000/vehicles";
+  //const url = "https://421421421.ddns.net/vehicles";
   try {
     const response = await fetch(url);
     const result = await response.json();
@@ -39,7 +43,8 @@ export async function getBuses() {
   }
 }
 export async function getSchedule() {
-  const url = "https://421421421.ddns.net/schedules";
+  const url = "http://localhost:3000/schedules";
+  //  const url = "https://421421421.ddns.net/schedules";
   try {
     const response = await fetch(url);
     const result = await response.json();
