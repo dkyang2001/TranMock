@@ -34,14 +34,7 @@ function App() {
   const [heading, setHeading] = useState(null);
   const [prevBound, setPrevBound] = useState(null);
   //api data storage states
-  const [agencyList, setAgencyList] = useState([
-    {
-      long_name: "University of Virginia",
-      name: "uva",
-      short_name: "UVA",
-      agency_id: "347",
-    },
-  ]);
+  const [agencyList, setAgencyList] = useState([]);
   const [routeList, setRouteList] = useState({});
   const [busStops, setBusStops] = useState(new Map());
   const [busMap, setBusMap] = useState(new Map());
@@ -111,6 +104,14 @@ function App() {
     if (localStorage.getItem("favorites")) {
       setFavorites(JSON.parse(localStorage.getItem("favorites")));
     }
+    setAgencyList([
+      {
+        long_name: "University of Virginia",
+        name: "uva",
+        short_name: "UVA",
+        agency_id: "347",
+      },
+    ]);
     //fetch and set CAT Schedule
     getSchedule().then((scheduleDic) => {
       setSchedules(scheduleDic);
