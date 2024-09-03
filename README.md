@@ -7,6 +7,7 @@ This app was created as mock-up of a bus tracker app called **Transloc**.
 
 The web app is public and free to use, and its main target audience are Charlottesville residents. One difference from the original transloc app is it also includes Charlottesville area transit routes along with UVA UTS routes. App contains all live data of the routes including live location/heading of vehicles, arrival estimates, and schedules.
 
+***The App was creating using Maplibre and CARTO style tiles***
 
 ## Features
 
