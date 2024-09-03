@@ -1,8 +1,9 @@
-# React + Vite
+#Brief Introduction
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This app was created as mock-up of a bus tracker app called **Transloc**. 
 
-Currently, two official plugins are available:
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+The web app is public and free to use, and its main target audience are Charlottesville residents. One difference from the original transloc app is it also includes Charlottesville area transit routes along with UVA UTS routes. Due to the Transloc API Rate limit, the app is limited to the two routes belonging to Charlottesville. All features of the app are listed with descriptions below: 
+
+
+##Features
